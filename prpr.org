@@ -1,0 +1,5355 @@
+#+TITLE: The Practice of Programming 요약 정리
+#+OPTIONS: toc:2, num:nil
+The Practice of Programming
+
+* 참고 자료
+
+- [[https://www.bamsoftware.com/computers/tpop-answers.html][연습문제 솔루션]]: Exercise 1-10을 풀다가 발견했다.
+
+* 스타일
+
+** 소개
+
+*** 예시
+
+ #+BEGIN_SRC c
+   if ( (country == SING) || (country == BRNI) ||
+	(country == POL)  || (country == ITALY) )
+   {
+     /*
+      ,* country가 싱가포르거나 브루나이 혹은 폴란드라면 통화가 연결된
+      ,* 시간이 아니라 응답 시간이 현재 시간이 된다. 응답 시간을
+      ,* 초기화하고 요일을 설정한다.
+      ,*/
+     ...
+ #+END_SRC
+
+ *잘못된점*
+
+ - 싱가포르, 브루나이, 폴란드 세 국가가 어떤 관계이길래 하나로 묶었는지
+   설명하지 않았다.
+ - 이탈리아에 대한 설명이 빠져있으므로, 코드나 주석 중 하나는 틀렸다.
+
+*** 예시
+
+ #+BEGIN_SRC c
+   #define ONE 1
+   #define TEN 10
+   #define TWENTY 20
+ #+END_SRC
+
+ *잘못된점*
+
+ - 이 값이 프로그램에서 하는 역할을 설명해주지 못한다.
+
+ *올바르게 고친 예시*
+
+ #+BEGIN_SRC c
+   #define INPUT_MODE 1
+   #define INPUT_BUFSIZE 10
+   #define OUTPUT_BUFSIZE 20
+ #+END_SRC
+
+** 이름:전역 변수에는 서술적인 이름을, 지역 변수에는 짧은 이름을 붙이라
+
+*** 예시(전역 변수)
+
+ #+BEGIN_SRC c
+   int num_pending = 0; // 입력 큐에서 대기중인 원소의 수
+ #+END_SRC
+
+ 간단한 주석을 덧붙이는 것도 좋다.
+
+*** 예시(지역 변수)
+
+ #+BEGIN_SRC java
+   for (int theElementIndex = 0; theElementIndex < numberOfElements;
+	  theElementIndex++)
+       elementArray[theElementIndex = the ElementIndex;
+ #+END_SRC
+
+ *잘못된 점*
+
+ - 지역변수임에도 변수명이 너무 길다.
+
+ *올바르게 고친 예시*
+
+ #+BEGIN_SRC java
+   for (int i = 0; i < nelem; i++)
+       elem[i] = i;
+ #+END_SRC
+
+
+** 이름:일관성을 지켜라
+
+*** 예시
+
+ #+BEGIN_SRC java
+   class UserQueue {
+       int noOfItemsInQ, frontOfTheQueue, queueCapacity;
+       public int noOfUsersInQueue() { ... }
+   }
+ #+END_SRC
+
+ *잘못된 점*
+
+ - 큐를 나타내는 단어가 =Q=, =Queue=, =queue= 등으로 일관성이 없다.
+
+ *올바르게 고친 예시*
+
+ #+BEGIN_SRC java
+   class UserQueue {
+       int nitems, front, capacity;
+       public int nusers() { ... }
+   }
+ #+END_SRC
+
+ 문맥을 통해 큐와 연관된 변수임을 알 수 있으므로 큐를 나타내는 단어를
+ 구태여 중복하여 적을 필요가 없다.
+
+ *보완할 점*
+
+ - =UserQueue= 라는 명칭에서 알 수 있듯이 큐의 =items= 가 곧 =users= 와
+   같은 말일테니 가능하다면 하나로 통일하는 것이 좋겠다.
+
+** 이름:함수 이름에는 능동형을 쓰라
+
+*** 예시
+
+ #+BEGIN_SRC c++
+   now = date.getTime();
+   putchar('\n');
+ #+END_SRC
+
+ 함수 이름에는 이와 같이 능동형 동사를 써야 한다.
+
+*** 예시
+
+ #+BEGIN_SRC c++
+   if (checkoctal(c)) ...
+ #+END_SRC
+
+ *잘못된 점*
+
+ - =checkoctal= 로는 어떤 결과가 나타날지 예상할 수 없다.
+
+ *올바르게 고친 코드*
+
+ #+BEGIN_SRC c++
+   if (isoctal(c)) ...
+ #+END_SRC
+
+ 인자 =c= 가 8진수일 때 참을 돌려준다는 것이 분명하다.
+
+** 이름:정확한 이름을 쓰라
+
+*** 예시
+
+ #+BEGIN_SRC c
+   #define isoctal(c) ((c) >= '0' && (c) <= '8')
+ #+END_SRC
+
+ *잘못된 점*
+
+ - 부정확하게 구현되었다.
+
+ *올바르게 고친 코드*
+
+ #+BEGIN_SRC c
+   #define isoctal(c) ((c) >= '0' && (c) <= '7')
+ #+END_SRC
+
+*** 예시
+
+ #+BEGIN_SRC java
+   public boolean inTable(Object obj) {
+       int j = this.getIndex(obj);
+       return (j == nTable);
+   }
+ #+END_SRC
+
+ =getIndex()= 는 찾는 객체가 있다면 =[0, nTable)= 범위의 값을, 없다면
+ =nTable= 을 반환하므로 정 반대의 행동을 한다.
+
+** 이름:연습
+
+*** 연습 1-1.
+
+아래의 코드에서 이름과 값의 선택에 대해서 평가해 보라.
+
+#+BEGIN_SRC c
+  #define TRUE 0
+  #define FALSE 1
+
+  if ((ch = getchar()) == EOF)
+    not_eof = FALSE;
+#+END_SRC
+
+자칫 숫자로 여겨질 수 있는 자료인 0과 1에 =TRUE=, =FALSE= 라는 이름을
+붙여 의미를 나타낸 것은 좋은 시도라고 생각한다. =ch= 라는 이름도
+관용적이고 간결하게 표현된 지역변수이다. 그러나 =not_eof= 는
+번잡하다. 차라리 =eof= 변수를 두고 =!eof= 표현식으로 =eof= 가 아님을
+표현하는 편이 더 간결하다.
+
+*** 연습 1-2.
+
+이 함수를 더 좋게 고쳐보라.
+
+#+BEGIN_SRC c
+  int smaller(char *s, char *t) {
+    if (strcmp(s, t) < 1)
+      return 1;
+    else
+      return 0;
+  }
+#+END_SRC
+
+문제점
+
+- =smaller= 이라는 함수 이름은 동사가 아니므로 어떤 역할을 하는지
+  짐작하기 어렵다. =is_smaller= 등으로 고치는 것이 좋겠다.
+- 더 나아가, 문자열이 작다는 것은 무엇을 의미할까? 프로그래밍을
+  해봤다면 대개 문자열의 크고 작음이 사전 순으로 앞서있거나 뒤져있음을
+  나타낸다고 배우지만, 모두가 그렇다고 보장할 순 없으므로 다른 더 좋은
+  이름이 있다면 그것을 쓰는 것이 좋겠다.
+- 그리고 s와 t중 무엇을 기준으로 '더 작음'을 나타내야 할까? binary
+  operator라면 앞선 인자가 기준이 된다는 것을 알지만, 그것은 이름을
+  통해 명확히 드러나지 않는다. binary operator 함수에 대한 관례를
+  차용하여, =lhs=, =rhs= 와 같은 명명을 통해 언어의 한계를 상쇄시킬 수
+  있을 것이다.
+- 이 함수는 또한 모호하다. 코드와 이름이 불일치한다. 코드에 맞게
+  정확히 명명하면 =s is less than or equal to t= 가 함수명이 될
+  것이다.
+- 마지막으로, 명명법에 관련한 내용은 아니지만 논리가 장황하다. 이
+  함수의 행동으로 보아 리턴값은 참 혹은 거짓이다. 따라서 if 조건식을
+  그대로 함수 정의로 빼어 써도 될 것 같다.
+
+*올바르게 고친 코드*
+
+#+BEGIN_SRC c
+  int is_smaller(char *lhs, char *rhs) {
+    return strcmp(s, t) < 0
+  }
+#+END_SRC
+
+*** 연습 1-3.
+
+이 코드를 소리내어 읽어보라
+
+#+BEGIN_SRC c
+  if ((falloc(SMRHSHSCRTCH, S_IFEXT | 0644, MAXRODDHSH)) < 0)
+    ...
+#+END_SRC
+
+욕이 나온다.
+
+** 표현식과 문장:들여쓰기로 구조를 알아보기 쉽게 하라
+
+** 표현식과 문장:표현식을 자연스럽게 쓰라
+
+*** 예시
+
+ #+BEGIN_SRC c
+   if (!(block_id < actblks) || !(block_id >= unblocks))
+     ...
+ #+END_SRC
+
+ *잘못된 점*
+
+ - 부정을 포함하는 조건은 언제나 이해하기 어렵다. 조건이 직관적으로
+   읽히도록 고쳐야 한다.
+
+ *올바르게 고친 예시*
+
+ #+BEGIN_SRC c
+   if ((block_id >= actblks) || (block_id < unblocks))
+     ...
+ #+END_SRC
+
+** 표현식과 문장:괄호를 써서 애매함을 해소하라
+
+*** 유의점
+
+ 1. 괄호 연산자는 어떤 연산자보다도 우선순위가 높다.
+ 2. 비교 연산자(~<~ ~==~ ~!=~)는 논리 연산자(~&&~ ~||~)보다 우선순위가 높다.
+ 3. 비교 연산자는 비트 연산자(~&~ ~|~)보다도 우선순위가 높다.
+
+*** 예시
+
+ #+BEGIN_SRC c
+   if (x&MASK == BITS)
+     ...
+ #+END_SRC
+
+ *잘못된 점*
+
+ - 비트 연산자 =&= 는 비교 연산자 ~==~ 보다 우선순위가 낮기 때문에,
+   실제로는 ~x & (MASK == BITS)~ 와 같이 분석된다. 이는 프로그래머가
+   의도한 바와 다르다.
+
+ *올바르게 고친 예시*
+
+ #+BEGIN_SRC c
+   if ((x&MASK) == BITS)
+     ...
+ #+END_SRC
+
+*** 예시
+
+ #+BEGIN_SRC c
+   leap_year = y % 4 == 0 && y % 100 != 0 || y % 400 == 0;
+ #+END_SRC
+
+ *잘못된 점*
+
+ - 문법상으로는 의도대로 동작하는 코드이므로 괄호가 필요없기는 하지만,
+   연산자 이것저것이 늘어져있어 우선순위를 파악하기 쉽지 않다.
+
+ *올바르게 고친 예시*
+
+ #+BEGIN_SRC c
+   leap_year = ((y%4 == 0) && (y%100 != 0)) || (y%400 == 0);
+ #+END_SRC
+
+** 표현식과 문장:복잡한 표현은 잘게 쪼개라
+
+*** 예시
+
+#+BEGIN_SRC c
+  ,*x += (*xp=(2*k < (n-m) ? c[k+1] : d[k--]));
+#+END_SRC
+
+*잘못된 점*
+
+- 한 표현식 안에 너무 많은 연산으로 빼곡히 채워져있다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  if (2*k < n-m)
+    ,*xp = c[k+1];
+  else
+    ,*xp = d[k--];
+  ,*x += *xp
+#+END_SRC
+
+** 표현식과 문장:명료하게 쓰라
+
+*** 예시
+
+#+BEGIN_SRC c
+  subkey = subkey >> (bitoff - ((bitoff >> 3) << 3));
+#+END_SRC
+
+*잘못된 점*
+
+- 계산식이 너무 장황하여 이해하기 어렵다.
+- =(bitoff - ...)= 부분을 잘 살펴보면, 마지막 세 비트만을 남기고자
+  하는 숨은 의도를 찾아낼 수 있다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  subkey = subkey >> (bitoff & 0x7);
+#+END_SRC
+
+
+*** 예시
+
+#+BEGIN_SRC c
+  child=(!LC&&!RC)?0:(!LC?RC:LC);
+#+END_SRC
+
+*잘못된 점*
+
+- 코드의 모든 가능한 경로를 따라가보지 않는 이상 어떻게 작동하는지
+  알아내기 쉽지 않다.
+- *명료함은 간결함과는 다르다*. 명료함은 코드의 길고 짧음보다는 코드가
+  읽기 쉬운지에 초점이 맞추어져 있다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  if (RC)
+    child = RC;
+  else if (LC)
+    child = LC;
+  else
+    child = 0;
+#+END_SRC
+
+
+** 표현식과 문장:부수효과를 조심하라
+
+*** 예시
+
+#+BEGIN_SRC c
+  str[i++] = str[i++] = ' ';
+#+END_SRC
+
+*잘못된 점*
+
+- i가 언제 갱신되느냐에 따라 다른 결과를 초래할 수 있다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  str[i++] = ' ';
+  str[i++] = ' ';
+#+END_SRC
+
+부수효과에 의한 모호성을 피하고자 식을 쪼갰다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  scanf("%d %d", &yr, &profit[yr]);
+#+END_SRC
+
+*잘못된 점*
+
+- 인자 평가 방식에 따라 다른 결과를 초래할 수 있다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  scanf("%d", &yr);
+  scanf("%d", &profit[yr]);
+#+END_SRC
+
+** 표현식과 문장:연습
+
+*** 연습 1-4.
+
+다음의 코드를 개선해보자
+
+#+BEGIN_SRC c
+  {
+    if ( !(c == 'y' || c == 'Y') )
+      return;
+
+    length = (length < BUFSIZE) ? length : BUFSIZE;
+
+    flag = flag ? 0 : 1;
+
+    quote = (*line == '"') ? 1 : 0;
+
+    if (val & 1)
+      bit = 1;
+    else
+      bit = 0;
+  }
+#+END_SRC
+
+*잘못된 점*
+
+- 첫번째 if문은 부정문이 있어 읽기 어렵다. 드모르간 법칙을 이용해 부정
+  조건을 표현식 안으로 내재시킬 수 있을 것 같다.
+- 두번째는 식이 복잡하여 경로를 따라가보기 전까지 이해하기가
+  어렵다. if 문 하나로 표현할 수 있으니, 그렇게 바꾸면 더 가독성에
+  좋을 것이다. 더 나은 방편은, =length= 와 =BUFSIZE= 중 작은 것으로
+  고른다는 의도를 코드에 직접 반영하는 것이다. 더 작은 값을 고르는
+  =min= 함수를 만들어 쓴다면 좋을 것이다.
+- 세번째는 단순한 부정 조건으로, 네번째는 조건식 그 자체로 바꾸어 쓸 수 있다.
+- 네번째는 또한 line의 첫 문자가 ='"'= 인지 검사하는 것으로
+  보인다. 명료함을 위하여 인덱스 표현으로 바꾸어 준다.
+- 마지막 if-else문은 val이 홀수인지를 검사하는 로직이다. 성능이 아주
+  중요하지 않다면, 우리가 잘 아는 짝수 검사 idiom을 이용하는 편이 나을
+  것이다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  {
+    if (c != 'y' && c != 'Y')
+      return;
+
+    length = min(length, BUFSIZE);
+
+    flag = !flag;
+
+    quote = (line[0] == '"');
+
+    bit = (val%2 == 1);
+  }
+#+END_SRC
+
+*** 연습 1-5.
+
+어느 부분이 잘못되었을까?
+
+#+BEGIN_SRC c
+  int read(int *ip) {
+    scanf("%d", ip);
+    return *ip;
+  }
+    ...
+  insert(&graph[vert], read(&val), read(&ch));
+#+END_SRC
+
+*잘못된 점*
+
+- =insert()= 문에서 사용될 때, =val= 과 =ch= 중 무엇이 먼저 읽힐 지가
+  명확하지 않다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  read(&val);
+  read(&ch);
+  insert(&graph[vert], val, ch);
+#+END_SRC
+
+
+*** 연습 1-6.
+
+계산 순서에 따라 이 코드의 결과로 나올 수 있는 여러 출력 값을 모두 나열해보라.
+
+#+BEGIN_SRC c
+  n = 1;
+  printf("%d %d\n", n++, n++);
+#+END_SRC
+
+*CASE 1*
+
+#+BEGIN_SRC c
+  n = 1;
+  printf("%d %d\n", n, n);
+  n+=1;
+  n+=1;
+#+END_SRC
+
+만약 컴파일러가 함수 인자 전달 과정까지를 한 묶음으로 본다면, n의
+증감은 함수 수행이 끝난 다음에 이루어질 것이다. 따라서 이 경우는 1, 1.
+
+*CASE 2*
+
+#+BEGIN_SRC c
+  n = 1;
+  printf("%d %d\n", n, n+=1);
+  n+=1;
+#+END_SRC
+
+컴파일러가 컴마를 기준으로 statement를 구분한다고 치자. 그렇다면 두
+가지 경우가 있다. 앞선 인자부터 계산하는 경우, 혹은 뒤에 있는 인자부터
+계산하는 경우. 이 경우는 전자에 해당한다. 이 때의 결과는 1, 2.
+
+*CASE 3*
+
+#+BEGIN_SRC c
+  n = 1;
+  printf("%d %d\n", n+=1, n);
+  n+=1;
+#+END_SRC
+
+CASE 2와 전제는 같지만, 이번에는 후자의 경우라고 보자. 그러면 결과는
+2, 1이 된다.
+
+*수행 결과*
+
+- clang: '1 2'
+- gcc: '2 1'
+- tcc: '1 2'
+- MSVC: '1 1'
+
+** 일관성과 관용 표현:들여쓰기와 중괄호를 쓰는 스타일에서는 일관성을 지키라
+
+*** 예시
+
+#+BEGIN_SRC c
+  if (month == FEB) {
+    if (year%4 == 0)
+      if (day > 29)
+	legal = FALSE;
+    else
+      if (day > 28)
+	legal = FALSE;
+  }
+#+END_SRC
+
+*잘못된 점*
+
+- 이 예시는 Dangling else의 대표적 사례이다. 실제 구문 분석을 해보면,
+  들여쓰기를 통해 나타낸 로직의 의도와 다르게 나타난다. 마지막 =else=
+  는 가장 가까운 =if= 문인 =if (day > 29)= 라인에 붙어있기 때문이다.
+- 또한 연이어 =if= 가 나타날 때는 중괄호를 모두 써주는 편이 구조를
+  파악하기 편하다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  if (month == FEB) {
+    if (year%4 == 0) {
+      if (day > 29) {
+	legal = FALSE;
+      }
+    } else if (day > 28) {
+	legal = FALSE;
+    }
+  }
+#+END_SRC
+
+*보완할 점*
+
+여전히 코드의 논리가 복잡다단하여 알아보기 어렵다. 이 경우, 2월의 날짜
+수를 정해둔 변수를 쓰면 논리 중첩을 분해하여 더욱 보기 쉽게 고칠 수
+있다.
+
+#+BEGIN_SRC c
+  if (month == FEB) {
+    int nday = 28;
+    if (year%4 == 0) {
+      nday = 29;
+    }
+    if (day > nday) {
+      legal = FALSE;
+    }
+  }
+#+END_SRC
+
+마지막으로, ~year%4 == 0~ 은 윤년을 판단하는 올바른 기준이 아니므로
+여전히 코드는 잘못되어있다. 단지 책에서 편의상 뒷 부분을 생략하였을
+뿐이다.
+
+*** 예시
+
+다음은 Gnome 개발자 센터에서 제공하는 C Coding Style Guide 내용의
+예제이다(책에는 없는 내용; [[https://developer.gnome.org/programming-guidelines/stable/c-coding-style.html.en][링크]]).
+
+#+BEGIN_SRC c
+  /* invalid */
+  if (condition)
+    {
+      foo ();
+      bar ();
+    }
+  else
+    baz ();
+
+  /* valid GNU style */
+  if (condition)
+    {
+      foo ();
+      bar ();
+    }
+  else
+    {
+      baz ();
+    }
+#+END_SRC
+
+두 가지 관찰을 할 수 있다.
+
+1. 교재의 컨벤션과는 달리, 여는 중괄호를 =if (조건식)= 아래로 내려
+   쓰고, 중괄호에도 들여쓰기를 한다.
+2. 쌍을 이루는 if - else 구문의 한쪽에만 중괄호가 있는 것을 허용하지
+   않는다.
+
+교재에서도 말하듯, 다른 사람들의 프로젝트에선 나만의 컨벤션을 고집하지
+않는 것이 좋다. "코드의 일관성은 개발자 자신의 스타일보다 중요하다."
+
+가이드에서는 이렇게 설명하고 있다: 
+
+#+BEGIN_QUOTE
+"While coding style is very much a matter of taste, in GNOME 
+we favor a coding style that promotes consistency, readability, 
+and maintainability."
+#+END_QUOTE
+
+
+** 일관성과 관용 표현:일관성을 위해 관용 표현을 사용하라
+
+*** 예시
+
+#+BEGIN_SRC c
+  i = 0;
+  while (i <= n - 1)
+    array[i++] = 1.0;
+#+END_SRC
+
+#+BEGIN_SRC c
+  for (i = n; --i >= 0; )
+    array[i] = 1.0;
+#+END_SRC
+
+*보완할 점*
+
+둘 다 문법적으로 올바르고 같은 동작을 수행하는 코드이지만, 배열을
+순회하는 관용적인 형식을 따른다면 다음과 같이 바꾸는 것이 좋다. 별다른
+노력을 하지 않고도 루프가 어떻게 동작하는지 알아챌 수 있기 때문이다.
+
+#+BEGIN_SRC c
+  for (i = 0; i < n; i++) {
+    array[i] = 1.0;
+  }
+#+END_SRC
+
+*** 예시(루프)
+
+*관용구 1*
+
+연결 리스트를 순회하는 루프
+
+#+BEGIN_SRC c
+  for (p = list; p != NULL; p = p->next)
+    ...
+#+END_SRC
+
+*관용구 2*
+
+무한 루프를 나타내는 두 가지 방법
+
+#+BEGIN_SRC c
+  for (;;)
+    ...
+#+END_SRC
+
+#+BEGIN_SRC c
+  while (1)
+    ...
+#+END_SRC
+
+*관용구 3*
+
+루프 조건식 안에 대입문을 넣는 경우
+
+#+BEGIN_SRC c
+  while ((c = getchar()) != EOF)
+    putchar(c);
+#+END_SRC
+
+*관용구 4*
+
+문자열을 위한 공간을 할당하는 관용구
+
+#+BEGIN_SRC c
+  p = malloc(strlen(buf)+1);
+  strcpy(p, buf);
+#+END_SRC
+
+** 일관성과 관용 표현:다중결정이 필요할 때는 else-if를 사용하라
+
+*** 예시
+
+#+BEGIN_SRC c
+  if (argc == 3)
+    if ((fin = fopen(argv[1], "r")) != NULL)
+      if ((fout = fopen(argv[2], "w")) != NULL) {
+	while ((c == getc(fin)) != EOF)
+	  putc(c, fout);
+	fclose(fin);
+	fclose(fout);
+      } else
+	printf("출력 파일 %s를 열 수 없음\n", argv[2]);
+    else
+      printf("입력 파일 %s를 열 수 없음\n", argv[1]);
+  else
+    printf("사용법: cp 입력파일 출력파일");
+#+END_SRC
+
+*잘못된 점*
+
+- "if 문이 중첩되어 여러 개가 등장한다면 완전히 잘못된 것은 아니더라도
+  코드가 이상하게 되어 간다는 경고로 볼 수 있다"
+- 코드의 내용을 한 흐름에 파악하기가 어렵다.
+- =fout= 이 잘못되었을 때 =fin= 을 닫지 않아 자원 누수가 염려된다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  if (argc != 3) {
+    printf("사용법: cp 입력파일 출력파일");
+  } else if ((fin = fopen(argv[1], "r")) == NULL) {
+    printf("입력 파일 %s를 열 수 없음\n", argv[1]);
+  } else if ((fout = fopen(argv[2], "w")) == NULL) {
+    printf("출력 파일 %s를 열 수 없음\n", argv[2]);
+    fclose(fin);
+  } else {
+    while ((c == getc(fin)) != EOF)
+      putc(c, fout);
+    fclose(fin);
+    fclose(fout);
+  }
+#+END_SRC
+
+코드의 결정 순서를 뒤집는 것 만으로 코드를 한 흐름으로 파악할 수 있다.
+
+** 일관성과 관용 표현:연습
+
+*** 연습 1-7.
+
+다음 세 C/C++ 코드를 좀 더 명료하게 고쳐보자.
+
+*코드 1*
+
+#+BEGIN_SRC c
+  /* Example 1. */
+  if (istty(stdin)) ;
+  else if (istty(stdout)) ;
+       else if (istty(stderr)) ;
+	    else return (0);
+#+END_SRC
+
+*잘못된 점*
+
+- 원칙적으로 짝을 이루는 if-else 끼리 같은 수준으로 들여써야 하지만,
+  if-else-if 관용 표현에서는 그렇지 않고 세로로 쭉 내려 쓴다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  if (istty(stdin)) ;
+  else if (istty(stdout)) ;
+  else if (istty(stderr)) ;
+  else return (0);
+#+END_SRC
+
+*코드 2*
+
+#+BEGIN_SRC c
+  /* Example 2. */
+  if (retval != SUCCESS)
+  {
+    return (retval);
+  }
+  /* All wnet well! */
+  return SUCCESS;
+#+END_SRC
+
+*잘못된 점*
+
+- 두 경로 모두 retval의 값을 반환하므로, 의미 중복이다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  return (retval);
+#+END_SRC
+
+*코드 3*
+
+#+BEGIN_SRC c
+  /* Example 3. */
+  for (k = 0; k++ < 5; x += dx)
+    scanf("%lf", &dx);
+#+END_SRC
+
+*잘못된 점*
+
+- 루프 표현식이 관용적으로 표현되지 않아 한 눈에 알아보기 어렵다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  for (k = 0; k < 5; k++) {
+    scanf("%lf", &dx);
+    x += dx;
+  }
+#+END_SRC
+
+*** 연습 1-8.
+
+이 자바 코드에서 오류를 찾아내고 루프를 관용 표현으로 고쳐보자.
+
+#+BEGIN_SRC java
+  int count = 0;
+  while (count < total) {
+      count++;
+      if (this.getName(count) == nametable.userName()) {
+	  return (true);
+      }
+  }
+#+END_SRC
+
+*잘못된 점*
+
+- 코드의 의도를 미루어 짐작해보면, getName은 =[0, total)=, 혹은 =[1,
+  total]= 범위의 인자를 받을것이다(=total= 만큼의 이름이 존재할
+  것이므로). 이 코드대로면, =getName()= 의 인자로 =[1, total]= 범위의
+  인자가 들어간다. 하지만 이는 관용표현으로서 맞지 않다. 오류가 있다면
+  이 범위 문제라고 보고, 인자 범위가 =[0, total)= 이 되도록 수정하며
+  루프 관용 표현으로 고칠 것이다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC java
+  for (int count = 0; count < total; count++) {
+      if (this.getName(count) == nametable.userName()) {
+	  return (true);
+      }    
+  }
+#+END_SRC
+
+** 매크로 함수:매크로 함수를 멀리하라
+
+C++에는 inline 함수가 있기 때문에 매크로가 필요치 않고, 자바는
+매크로가 없다. C언어라 하더라도, 매크로 사용 시 함수 호출의 오버헤드가
+없어 성능에 유리하다는 주장은 현대에 와선 설득력이 없다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  #define isupper(c) ((c) >= 'A' && (c) <= 'Z')
+  ...
+  {
+    while (isupper(c = getchar()))
+      ...
+  }
+#+END_SRC
+
+*잘못된 점*
+
+- 매크로 함수의 매개변수 인자가 중복 계산된다.
+
+*대안*
+
+#+BEGIN_SRC c
+  while ((c = getchar()) != EOF && isupper(c))
+    ...
+#+END_SRC
+
+부수효과가 있는 문장과 매크로는 한 표현식 안에 섞어 쓰지 않는 것이
+바람직하다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  #define ROUND_TO_INT(x) ((int) ((x)+((x)>0)?0.5:-0.5))
+  ...
+  {
+    size = ROUND_TO_INT(sqrt(dx*dx+dy*dy));
+  }
+#+END_SRC
+
+*잘못된 점*
+
+- =sqrt()= 함수가 중복 계산되어 성능에 악영향을 미친다.
+
+** 매크로 함수:매크로 전체와 각 인자를 괄호로 묶어라
+
+*** 예시
+
+#+BEGIN_SRC c
+  #define square(x) (x) * (x)
+#+END_SRC
+
+*잘못된 점*
+
+- =1 / square(x)= 와 같은 표현식은 =1 / (x) * (x)= 와 같이 전개되어,
+  본래 의도와 다른 동작을 한다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  #define square(x) ((x) * (x))
+#+END_SRC
+
+** 매크로 함수:연습
+
+*** 연습 1-9.
+
+다음 매크로 정의의 문제점을 찾아보라.
+
+#+BEGIN_SRC c
+  #define ISDIGIT(c) ((c >= '0') && (c <= '9')) ? 1 : 0
+#+END_SRC
+
+*잘못된 점*
+
+- 매개변수 =c= 가 괄호로 묶여있지 않아 ~>=~ 보다 우선순위가 낮은
+  연산이 들어온다면 기대대로 동작하지 않게 될 것이다. 예를 들어,
+  =ISDIGIT(x&MASK)= 와 같은 코드는 해석 과정에서 ~x&(MASK >= '0')~ 와
+  같이 해석된다.
+- 매개변수 =c= 에 부수효과가 있거나 연산량이 높은 표현식이 들어오면
+  중복 평가되며 기대치 않은 오동작, 혹은 성능 저하를 일으킬 것이다.
+- 매크로 전체가 괄호로 둘러싸여있지 않아 일부 문맥에서 오동작을 일으킬
+  것이다. 예를 들어, =ISDIGIT(c)?f(c):g(c)= 과 같은 표현식은 =(...) ?
+  1 : 0 ? f(c) : g(c)= 로 전개되어, 모호한 표현을 만들어낸다.
+
+
+** 매직넘버:매직 넘버에 이름을 달아주라
+
+*** 예시
+
+다음은 크기가 80x24인 터미널에 문자열 분포를 출력하는 프로그램의
+일부이다.
+
+#+BEGIN_SRC c
+  fac = lim / 20;      /* 출력 배율을 설정 */
+  if (fac < 1)
+    fac = 1;
+                       /* 분포표 생성 */
+  for (i = 0, col = 0; i < 27; i++, j++) {
+    col += 3;
+    k = 21 - (let[i] / fac);
+    star = (let[i] == 0) ? ' ' : '*';
+    for (j = k; j < 22; j++)
+      draw(j, col, star);
+  }
+  draw(23, 2, ' ');    /* X축 눈금 이름 표시 */
+  for (i = 'A'; i <= 'Z'; i++)
+    printf("%c ", i);
+#+END_SRC
+
+*잘못된 점*
+
+- 매직넘버를 사용해서 보기가 어려워졌다. 20, 21, 22, 23, 27 같은
+  숫자들이 어떤 의미를 지니고 있는지 알기 어렵다.
+- 정말 중요한 역할을 하는 세 숫자가 있다.
+  - 24 :: 화면의 줄 수
+  - 80 :: 화면의 너비
+  - 26 :: 알파벳 글자 수
+- 나머지 숫자는 이로부터 계산된 숫자들이므로, 주요 숫자에 이름을
+  붙이고 계산 과정을 나타내 주는 것이 좋다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  enum {
+    MINROW   = 1,                 /* 첫 줄 좌표 */
+    MINCOL   = 1,                 /* 첫 칸 좌표 */
+    MAXROW   = 24,                /* 마지막 줄 좌표 (<=) */
+    MAXCOL   = 80,                /* 마지막 칸 좌표 (<=) */
+    LABELROW = 1,                 /* 눈금 이름 표시 위치 */
+    NLET     = 26,                /* 알파벳 개수 */
+    HEIGHT   = MAXROW - 4,        /* 그래프 막대 높이 */
+    WIDTH    = (MAXCOL-1)/NLET    /* 그래프 막대 너비 */
+  };
+    ...
+    fac = (lim + HEIGHT-1) / HEIGHT; /* 출력 배율 설정 */
+    if (fac < 1)
+      fac = 1;
+    for (i = 0; i < NLET; i++) {     /* 분포표 생성 */
+      if (let[i] == 0)
+        continue;
+      for (j = HEIGHT - let[i]/fac; j < HEIGHT; j++)
+        draw(j+1 + LABELROW, (i+1)*WIDTH, '*');
+    }
+    draw(MAXROW-1, MINCOL+1, ' ');   /* x축 눈금 이름 표시 */
+    for(i = 'A'; i <= 'Z'; i++)
+      printf("%c ", i);
+#+END_SRC
+
+** 매직넘버:숫자는 매크로로 쓰지 말고 상수로 정의하라
+
+C에서는 enum을 통해, C++에서는 const를 통해, Java에서는 final을 통해
+상수를 관리하라.
+
+** 매직넘버:아스키 문자는 숫자 코드 말고 문자 상수로 쓰라
+
+#+BEGIN_SRC c
+  if (c >= 65 && c <= 90)
+    ...
+#+END_SRC
+
+위 보다는 아래가 낫고,
+
+#+BEGIN_SRC c
+  if (c >= 'A' && c <= 'Z')
+    ...
+#+END_SRC
+
+또한 이것 보다는 호환성을 위해 표준 헤더를 쓰는 것이 낫다.
+
+#+BEGIN_SRC c
+  if (isupper(c))
+    ...
+#+END_SRC
+
+
+** 매직넘버:타입을 통해 상수의 의미를 표현하라
+
+C/C++ 같은 약타입 언어에서 이것은 특히 중요하다: 숫자값 0은 포인터일
+때 =(void *)0= 혹은 =NULL= 로, 문자일 때 ='\0'= 으로, 부동소수점
+실수일 때 =0.0= 으로 써 의미가 명확히 드러나도록 하라.
+
+** 매직넘버:객체의 크기를 쓰려면 언어 기능을 활용하라
+
+=int= 타입의 크기가 필요할 때는 =sizeof(int)= 를 쓰자. 비슷하게, 배열
+원소의 크기가 필요할 때 =sizeof array[0]= 이 =sizeof (int)= 보다 좀 더
+낫다. 종종 같은 스코프 내의 정적 배열의 경우 =sizeof= 연산자를 통해
+배열 크기를 구할 수 있음을 참고하라.
+
+
+** 매직넘버:연습
+
+*** 연습 1-10.
+
+다음 정의에서 잠재적으로 발생할 수 있는 에러를 최소화하려면 어떻게
+만드는 것이 좋을까?
+
+#+BEGIN_SRC c
+  #define FT2METER    0.3048
+  #define METER2FT    3.28084
+  #define MI2FT       5280.0
+  #define MI2KM       1.609344
+  #define SQMI2SQKM   2.589988
+#+END_SRC
+
+*잘못된 점*
+
+- 솔직히 말해 무엇이 잠재적 에러를 만드는지는 잘 모르겠다. 여러
+  솔루션을 검색하여 찾아봤지만 [[https://www.bamsoftware.com/computers/tpop-answers.html][bamsoftware.com]] 에서 제공한 솔루션이
+  나의 생각과 가장 일치하는 것 같아 여기 남긴다. 특별한 부가 설명은
+  없었다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  #define FT2METER    0.3048
+  #define METER2FT    (1.0 / FT2METER)
+  #define MI2FT       5280.0
+  #define MI2KM       (MI2FT * FT2METER / 1000.0)
+  #define SQMI2SQKM   (MI2KM * MI2KM)
+#+END_SRC
+
+
+** 주석:명확한 코드에는 주석을 달지 말라
+
+*** 예시
+
+#+BEGIN_SRC c
+    /*
+     ,* default
+     ,*/
+    default:
+      break;
+  }
+
+  /* SUCCESS를 반환 */
+  return SUCCESS;
+
+  zerocount++; /* zero counter를 1 올림 */
+#+END_SRC
+
+*잘못된 점*
+
+- 당연한 말을 반복하여 화면을 어지럽히고 있을 뿐, 전혀 도움이 되지
+  않는다. 이 모든 주석을 삭제해야한다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  while ((c = getchar()) != EOF && isspace(c))
+    ;                             /* 공백은 건너뜀 */
+  if (c == EOF)                   /* 파일 끝 */
+    type = endoffile;
+  else if (c == '(')              /* 괄호 열기 */
+    type = leftparen;
+  else if (c == ')')              /* 괄호 닫기 */
+     type = rightparen;
+  else if (c == ';')              /* 세미콜론 */
+    type = semicolon;
+  else if (is_op(c))              /* 연산자 */
+    type = operator;
+  else if (isdigit(c))            /* 숫자 */
+    ...
+#+END_SRC
+
+*잘못된 점*
+
+- 변수명도 적절하고 논리구조도 명료하고 아주 잘 쓰인 코드이다.
+  같은말을 반복하는 주석만 빼고. 모든 주석을 빼도 코드를 읽는 데
+  문제가 없다.
+
+** 주석:함수와 전역 데이터에 주석을 달아라
+
+함수, 전역 변수, 상수 정의, 구조체와 클래스의 필드 등에 주석을 붙이는
+것은 좋은 습관이다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  struct State {           /* 접두어 + 접미어 목록 */
+    char   *pref[NPREF];   /* 접두어 단어들 */
+    Suffix *suf;           /* 접미어 목록 */
+    State  *next;          /* 해시테이블 다음 노드 */
+  }
+#+END_SRC
+
+*** 예시
+
+다음은 JPEG 이미지 디코더에서 사용되는 역 이산 코사인 변환(DCT)을 매우
+효율적으로 구현한 함수를 소개하는 주석이다.
+
+#+BEGIN_SRC c
+  /*
+   ,* idct: Chen-Wangㅇ 고안한 역 이차원 8x8 이산 코사인 변환(DCT)의 조정
+   ,* 정수 구현 (IEEE ASSP-32, 803-816쪽, 1984년 8월)
+   ,*
+   ,* 32비트 정수 연산 (8비트 계수)
+   ,* 매 DCT마다 곱셈 연산 11회, 덧셈 연산 29회
+   ,*
+   ,*
+   ,* IEEE 1180-1990를 준수하기 위해 계수가 12비트로 확장되었음
+   ,*/
+  static void idct(int b[8*8])
+  {
+    ...
+  }
+#+END_SRC
+
+책에서: "이 주석에서는 참조 문서를 표시하고 있으며, 알고리즘의 성능을
+알 수 있는 요약된 자료를 알려주고, 원래 알고리즘과 어떻게 다르게
+구현됐고 왜 그렇게 됐는지 알려준다."
+
+** 주석:나쁜 코드에 대해 설명하지 말고 코드를 새로 짜라
+
+주석이 코드보다 길다면 코드를 고칠 필요가 있다고 생각해야 한다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  /* "result"가 0이면 맞는 것이 발견되었기 때문에 '참'(0이 아닌 값)을
+     반환한다. 그리고 "result"가 0이 아니라면 '거짓'(0)을 반환한다. */
+
+  #ifdef DEBUG
+  printf("*** isword가 리턴됨. !result = %d\n", !result);
+  fflush(stdout);
+  #endif
+
+  return (!result);
+#+END_SRC
+
+*잘못된 점*
+
+- 마지막 단 한줄을 설명하기 위해 길고 혼란스런 주석과 조건적 컴파일
+  디버그 출력까지 쓰고 있다.
+- 변수 이름 result에 아무런 정보가 없다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  #ifdef DEBUG
+  printf("*** isword가 리턴됨. matchfound = %d\n", matchfound);
+  fflush(stdout);
+  #endif
+
+  return matchfound;
+#+END_SRC
+
+의미있는 변수명을 사용하여 긴 주석을 쓰는 일을 피할 수 있다.
+
+** 주석:주석과 코드가 모순되게 하지 말라
+
+코드를 수정하려면 반드시 기존 주석과의 일관성을 확인해보라. 더 나아가,
+주석은 코드와 일치하는 것이 아니라 보충 설명 해주는 것이 되어야 한다.
+
+*** 예시
+
+#+BEGIN_SRC c
+  time(&now);
+  strcpy(date, ctime(&now));
+  /* ctime에서 복사된 문자열 끝의 개행 문자를 없앰 */
+  i = 0;
+  while(date[i] >= ' ') i++;
+  date[i] = 0;
+#+END_SRC
+
+*잘못된 점*
+
+- 주석은 개행 문자를 얘기하는데 코드는 공백을 가리키고 있다.
+- 하고자 하는 일의 의도가 설명되지 않았다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  time(&now);
+  strcpy(date, ctime(&now));
+  /* ctime()은 문자열 끝에 개행문자를 넣기 때문에, 여기서 지운다. */
+  date[strlen(date)-1] = '\0';
+#+END_SRC
+
+코드의 의도를 정확히 뒷받침하는 설명을 주석에 넣고, 코드도 그에 충분한
+작업으로 대체하여 간결하게 바꾸었다.
+
+** 주석:혼란스럽게 하지 말고, 명확하게 하라
+
+*** 예시
+
+#+BEGIN_SRC c
+  int strcmp(char *s1, char *s2)
+  /* 이 문자열 비교 루틴은 s1이 오름차순으로 s2 앞에 있는 경우 -1을
+     반환하고, 같으면 0을, s2가 s1의 뒤에 있으면 1을 반환한다. */
+  {
+    while (*s1==*s2) {
+      if (*s1 == '\0') return (0);
+      s1++;
+      s2++;
+    }
+    if (*s1 > *s2) return (1);
+    return (-1);
+  }
+#+END_SRC
+
+*잘못된 점*
+
+- 표준함수를 구현했을 뿐인데, 주석이 코드만큼이나 길고 장황하다.
+
+*올바르게 고친 예시*
+
+#+BEGIN_SRC c
+  /* strcmp: s1<s2면 음수, s1>s2면 양수, 같으면 0을 반환
+             ANSI C, 4.11.4.2 절 */
+  int strcmp(const char *s1, const char *s2)
+  {
+    ...
+  }
+#+END_SRC
+
+표준 함수를 구현한 것이기 때문에, 동작 방식을 간단히 설명하고 어디서
+기반한 것인지 알려주기만 해도 충분하다.
+
+** 주석:연습
+
+*** 연습 1-11.
+
+다음의 주석들에 대해서 평가하라.
+
+*code 1*
+
+#+BEGIN_SRC c++
+  void dict::insert(string & w);
+  // w가 사전에 있으면 1을 반환, 아니면 0을 반환
+#+END_SRC
+
+insert라는 함수 이름은 이 함수가 무엇을 하는 지 보여주기 충분하고,
+주석은 이름을 통해 드러나지 않는 세부 내용을 설명한다는 점에서는 좋은
+주석이라고 생각한다. 그러나 함수 정의와 주석의 내용이 일치하지 않는다.
+둘 중 하나는 틀렸을 것이고, 보는 이로 하여금 혼란을 유발한다.
+
+*code 2*
+
+#+BEGIN_SRC c
+  if (n > MAX || n % 2 > 0) // 짝수 검사
+#+END_SRC
+
+코드를 통해 의도가 명확하게 드러난다. 숨은 의도가 있거나 표현식이
+복잡하지 않은 이상 주석은 불필요함에도 주석이 달려있고, 더군다나 그
+주석이 제대로 코드를 설명하고 있지도 않다.
+
+*code 3*
+
+#+BEGIN_SRC c++
+  // 메시지를 쓴다
+  // 쓰는 줄 각각에 줄 번호를 붙인다.
+
+  void write_message()
+  {
+    // 줄 번호를 증가시킴
+    line_number = line_number + 1;
+    fprintf(fout, "%d %s\n%d %s\n%d %s\n",
+            line_number, HEADER,
+            line_number+1, BODY,
+            line_number+2, TRAILER);
+    // 줄 번호를 증가시킴
+    line_number = line_number + 1;
+  }
+#+END_SRC
+
+모든 주석이 코드를 이해하는 데 아무짝에 쓸모가 없다. 만약 주석을
+쓴다면 어디로 어떤 메시지를 쓰는지 설명하는 것이 좋겠다. 모두 전역
+변수를 쓰고 있기 때문이다.
+
+* 알고리즘과 데이터 구조
+
+** 검색
+
+*** 순차 검색
+
+문자열의 정적 테이블을 만든다. NULL-terminating char* array 형태로
+구현하였다.
+
+#+BEGIN_SRC c
+  char *flab[] = {
+      "actually",
+      "just",
+      "quite",
+      "really",
+      NULL
+  };
+#+END_SRC
+
+이러한 자료 구조를 바탕으로 검색 루틴을 만들어본다.
+
+#+BEGIN_SRC c
+  /* lookup: 배열에 들어있는 단어를 순차 검색 */
+  int lookup(char *word, char *array[])
+  {
+    int i;
+
+    for (i = 0; array[i] != NULL; i++)
+      if (strcmp(word, array[i]) == 0)
+        return i;
+    return -1;
+  }
+#+END_SRC
+
+*** 이진 탐색
+
+아래는 HTML을 파싱하는 프로그램에서 뽑아낸, 좀 더 현실적인 크기의
+배열을 사용하는 코드다. 여기서 사용되는 배열의 크기는 100을 넘으며,
+각각 HTML 글자에 대한 이름을 갖고 있다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char *name;
+    int value;
+  };
+
+  /* HTML 글자들. 예를 들어 AElig은 A와 E를 합쳐놓은 ligature를 뜻함.
+     코드 값은 Unicode/ISO10646으로 인코딩됨 */
+  Nameval htmlchars[] = {
+      "AElig",  0x00c6,
+      "Aacute", 0x00c1,
+      "Acirc",  0x00c2,
+      /* ... */
+      "zeta",   0x03b6,
+  };
+#+END_SRC
+
+이러한 자료 구조를 기반으로 검색 루틴을 만들어 본다.
+
+#+BEGIN_SRC c
+  /* lookup: 배열 tab에서 주어진 name을 검색 */
+  int lookup(char *name, Nameval tab[], int ntab)
+  {
+    int low, high, mid, cmp;
+
+    low = 0;
+    high = ntab - 1;
+    while (low <= high) {
+      mid = (low + high) / 2;
+      cmp = strcmp(name, tab[mid].name);
+      if (cmp < 0)
+	high = mid - 1;
+      else if (cmp > 0)
+	low = mid + 1;
+      else           /* 찾았음 */
+	return mid;
+    }
+    return -1;       /* 찾는 원소가 없음 */
+  }
+#+END_SRC
+
+다음처럼 htmlchars 배열을 검색할 수 있다(=NELEMS()= 매크로는 1장에서
+만든 정적 배열 원소 개수 구하는 매크로 함수이다).
+
+#+BEGIN_SRC c
+  half = lookup("frac12", htmlchars, NELEMS(htmlchars));
+#+END_SRC
+
+위 코드는 ½라는 글자의 배열 인덱스를 찾는다.
+
+*** 시간 복잡도
+
+다들 알다시피, 순차 검색은 $O(n)$ 이고 이진 검색은 $O(log_{2}(n))$
+이다.
+
+** 정렬
+
+*** 퀵소트
+
+퀵소트의 접근법은 이러하다.
+
+#+BEGIN_EXAMPLE
+  배열의 한 원소를 선택하여, 기준(pivot)으로 삼는다.
+  다른 원소들을 두 집단으로 분리한다.
+  | 한 집단은 기준보다 작은 값을 갖는 집단
+  | 다른 집단은 기준보다 크거나 같은 값을 갖는 집단
+  각 집단을 이런 식으로 반복해서 정렬한다.
+#+END_EXAMPLE
+
+아래는 퀵 소트의 재귀적 구현이다.
+
+#+BEGIN_SRC c
+  /* quicksort: v[0]..v[n-1]을 오름차순으로 정렬한다 */
+  void quicksort(int v[], int n)
+  {
+    int i, last;
+
+    if (n <= 1)                   /* 정렬할 필요 없음 */
+      return;
+    swap(v, 0, rand() % n);
+    /* loop invariant: 지금껏 살펴본 구간에는 v[0]보다 작은 last개의
+       원소가 있다. */
+    last = 0;
+    for (i = 1; i < n; i++)
+      if (v[i] < v[0])
+	swap(v, i, ++last);
+    swap(v, 0, last);
+    quicksort(v, last);
+    quicksort(v+last+1, n-last-1);
+  }
+
+  /* swap: v[i]와 v[j]의 위치를 바꾼다 */
+  void swap(int v[], int i, int j)
+  {
+    int tmp;
+
+    if (i == j) return;
+
+    temp = v[i];
+    v[i] = v[j];
+    v[j] = temp;
+  }
+#+END_SRC
+
+*** 시간 복잡도
+
+보통의 경우, 기준값을 기준으로 두 집단이 균등하게 나뉜다고 보았을 때
+$O(n log(n))$ 의 시간 복잡도를 가진다. 그러나 재수가 없어 '언제나'
+균등하게 나뉘지 않게 된다면, $O(n^{2})$ 의 시간 복잡도를 가지게 될지도
+모른다.
+
+** 라이브러리
+
+*** qsort 함수
+
+C언어의 qsort 라이브러리 함수를 사용하기 위해서는 void 포인터에 대한
+비교 함수를 작성해야 한다. 다음은 문자열의 포인터에 대한 비교함수
+구현이다.
+
+#+BEGIN_SRC c
+  int scmp(const void *lhs, const void *rhs) {
+    char *s1, *s2;
+    s1 = *(char **)lhs;
+    s2 = *(char **)rhs;
+    return strcmp(s1, s2);
+  }
+#+END_SRC
+
+아래는 문자열 배열의 0번째 원소부터 N-1번째 원소까지 정렬하는 qsort 구문이다.
+
+#+BEGIN_SRC c
+  char *str[N];
+  qsort(str, N, sizeof(str[0]), scmp);
+#+END_SRC
+
+유사하게, int 형 정수 배열을 정렬하고자 한다면:
+
+#+BEGIN_SRC c
+  int icmp(const void *lhs, const void *rhs)
+  {
+    int n1, n2;
+    n1 = *(int *)lhs;
+    n2 = *(int *)rhs;
+    if (n1 < n2) return -1;
+    else if (n1 > n2) return 1;
+    else return 0;
+  }
+  ...
+  int arr[N];
+  qsort(arr, N, sizeof(arr[0]), icmp);
+#+END_SRC
+
+이렇게 하면 된다.
+
+*참고*
+
+=icmp()= 함수의 반환값을 if-else-if 구문을 통해 계산하는 대신 다음과
+같이 줄여 쓰고 싶을지도 모른다.
+
+#+BEGIN_SRC c
+  return n1 - n2;
+#+END_SRC
+
+이 코드가 훨씬 간결하게 느껴질 지도 모르겠다. 그러나 이는 오버플로우의
+염려가 있기 때문에 직접 비교하는 것이 안전하다.
+
+*** bsearch 함수
+
+bsearch 함수 역시 비교함수의 포인터를 전달해 주어야 한다. 여기서
+이진탐색을 구현하면서 만들었던 HTML 코드 lookup 함수를 다시
+상기해본다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char *name;
+    int value;
+  };
+
+  /* lookup: 배열 tab에서 주어진 name을 검색 */
+  int lookup(char *name, Nameval tab[], int ntab)
+  {
+    int low, high, mid, cmp;
+
+    low = 0;
+    high = ntab - 1;
+    while (low <= high) {
+      mid = (low + high) / 2;
+      cmp = strcmp(name, tab[mid].name);
+      if (cmp < 0)
+	high = mid - 1;
+      else if (cmp > 0)
+	low = mid + 1;
+      else           /* 찾았음 */
+	return mid;
+    }
+    return -1;       /* 찾는 원소가 없음 */
+  }
+#+END_SRC
+
+Nameval 끼리 비교하는 nvcmp 함수를 만든다.
+
+#+BEGIN_SRC c
+  int nvcmp(const void *p1, const void *p2)
+  {
+    Nameval v1, v2;
+    v1 = *(Nameval *) p1;
+    v2 = *(Nameval *) p2;
+    return strcmp(v1.name, v2.name);
+  }
+#+END_SRC
+
+그러면 lookup 함수를 bsearch 함수를 이용해 고쳐 쓸 수 있다.
+
+#+BEGIN_SRC c
+  int lookup(char *name, Nameval tab[], int ntab)
+  {
+    Nameval key, *np;
+
+    key.name = name;		/* key.value는 사용되지 않음 */
+    np = (Nameval *)bsearch(tab, ntab,
+			    sizeof(tab[0]), nvcmp);
+    if (np == NULL)
+      return -1;
+    else
+      return np - tab;
+  }
+#+END_SRC
+
+** 연습
+
+*** 연습문제 2-1.
+
+퀵소트는 재귀적으로 만들 때 가장 자연스럽게 표현된다. 반복문을
+이용해서 퀵소트를 작성해 본 후 두 버전을 비교해보라. (호어(Hoare)는
+반복문을 이용해서 퀵소트를 만들어 내기가 얼마나 어려웠는지, 그리고
+재귀적으로 해보았을 때 얼마나 깔끔하게 일이 해결되었는지 설명하고
+있다.)
+
+#+BEGIN_SRC c
+  /*
+   ,* 퀵소트의 반복문 구현 및 테스트
+   ,* 컴파일: clang quicksort.c -o quicksort.exe
+   ,* 테스트: quicksort.exe | sbcl --script
+   ,*/
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <time.h>
+
+  enum {
+    MAX_DEPTH = 100,     /* 스택 한도 */
+  };
+
+  /* swap: v[i]와 v[j]의 위치를 바꾼다 */
+  void swap(int v[], int i, int j)
+  {
+    int temp;
+
+    if (i == j) return;
+
+    temp = v[i];
+    v[i] = v[j];
+    v[j] = temp;
+  }
+
+  /* quicksort: v를 정렬한다. 실패시 0이 아닌 값을 반환한다. */
+  int quicksort(int v[], int n)
+  {
+    /* 재귀 루프를 반복으로 바꾸기 위해 스택을 직접 구현하여 관리한다 */
+    int l = 0;		/* l: 현재 스택 단계 */
+    /* vs[l]: 퀵소트의 현재 단계에서 다를 배열
+     ,* ns[l]: 퀵소트의 현재 단계에서 다룰 배열의 원소 개수
+     ,*/
+    static int *vs[MAX_DEPTH], ns[MAX_DEPTH];
+
+    vs[l] = v;
+    ns[l] = n;
+
+    while (l >= 0) {	/* 스택 단계가 음수라면 정렬이 끝난것이다 */
+      if (ns[l] <= 1) {	/* 정렬할 필요 없음 */
+	l--;
+	continue;
+      }
+      int last = 0;	/* last: pivot보다 작은 값의 개수 */
+      swap(vs[l], 0, rand() % ns[l]); /* pivot 선택 */
+      for (int i = 1; i < ns[l]; i++) /* pivot보다 작은 집단 */
+	if (vs[l][i] < vs[l][0])
+	  swap(vs[l], i, ++last);
+      swap(vs[l], 0, last);	/* pivot을 제 위치로 */
+    
+      int* pre_v = vs[l];
+      int  pre_n = ns[l];
+      /* 기준값보다 작은 집단 */
+      ns[l] = last;
+      /* 기준값보다 큰 집단 */
+      if (++l == MAX_DEPTH)
+	return 1;
+      vs[l] = pre_v+last+1;
+      ns[l] = pre_n-last-1;
+    }
+    return 0;
+  }
+
+  /* parr: 배열 v를 lisp-form으로 출력한다. */
+  void parr(int v[], int n)
+  {
+    int i;
+    printf("'(");
+    for (i = 0; i < n; i++) {
+      printf("%d%c", v[i], (i+1 == n ? ')' : ' '));
+    }
+  }
+
+  #define NELEM 1000
+  int main() {
+    int a[NELEM], i;
+    srand(time(NULL));
+    for (i = 0; i < NELEM; i++) {
+      a[i] = rand() % 100;
+    }
+    printf("(princ (equal (sort ");
+    parr(a, NELEM);
+    printf("  #'<) ");
+    int success = (quicksort(a, NELEM) == 0);
+    if (success) {
+      parr(a, NELEM);
+      printf("))");
+    } else {
+      printf("nil))");
+      printf("(format t \"not good\")");
+    }
+  }
+#+END_SRC
+
+** 자바의 퀵소트
+
+자바는 객체를 통해 함수를 전달한다. 그렇기 때문에 우선은 Functor
+타입을 선언해야 한다.
+
+#+BEGIN_SRC java
+  interface Cmp {
+      int cmp(Object x, Object y);
+  }
+#+END_SRC
+
+이 인터페이스를 구현하는 비교 함수를 선언한다.
+
+#+BEGIN_SRC java
+  // Icmp: 정수비교
+  class Icmp implements Cmp {
+      public int cmp(Object o1, Object o2)
+      {
+	  int i1 = ((Integer) o1).intValue();
+	  int i2 = ((Integer) o2).intValue();
+	  if (i1 < i2)
+	      return -1;
+	  else if (i1 > i2)
+	      return 1;
+	  else
+	      return 0;
+      }
+  }
+
+  // Scmp: String 비교
+  class Scmp implements Cmp {
+      public int cmp(Object o1, Object o2)
+      {
+	  String s1 = (String) o1;
+	  String s2 = (String) o2;
+	  return s1.compareTo(s2);
+      }
+  }
+#+END_SRC
+
+이제 Cmp 메서드를 이용하는 퀵소트를 정의한다.
+
+#+BEGIN_SRC java
+  class Quicksort {
+      static Random rgen = new Random();
+      // Quicksort.sort: v[left]..v[right]를 퀵소트로 정렬
+      static void sort(Object[] v, int left, int right, Cmp cmp)
+      {
+	  int i, last;
+
+	  if (left >= right) // 할일 없음. 종료
+	      return;
+	  swap(v, left, rand(left, right)); // 기준 원소를 v[left]로 이동
+	  last = left;
+	  for (i = left+1; i <= right; i++) // 집단 분리
+	      if (cmp.cmp(v[i], v[left]) < 0)
+		  swap(v, ++last, i);
+	  swap(v, left, last);    // 기준 원소 복원
+	  sort(v, left, last-1, cmp); // 기준보다 작은 집단 정렬
+	  sort(v, last+1, right, cmp); // 기준보다 큰 집단 정렬
+      }
+      // Quicksort.swap: v[i]와 v[j]의 위치를 바꿈
+      static void swap(Object v[], int i, int j)
+      {
+	  Object temp;
+	  temp = v[i];
+	  v[i] = v[j];
+	  v[j] = temp;
+      }
+      // Quicksort.rand: [left, right] 범위에서 임의의 정수를 리턴
+      static int rand(int left, int right)
+      {
+	  return left + Math.abs(rgen.nextInt())%(right-left+1);
+      }
+  }
+#+END_SRC
+
+정렬은 다음과 같이 하면 된다.
+
+#+BEGIN_SRC java
+  String[] sarr = new String[n];
+
+  Quicksort.sort(sarr, 0, sarr.length-1, new Scmp());
+#+END_SRC
+
+** 연습
+
+*** 연습 2-2.
+
+우리의 자바용 퀵소트는 원소를 원래 타입에서 오브젝트로 바꾸고, 다시
+원래 타입으로 되돌리면서 상당히 자주 형변환을 수행한다. 한 타입만
+대상으로 하는 Quicksort.sort 버전을 만들어서 원래 버전과 비교하고,
+타입 변환에서 성능상 손해를 얼마나 보는지 측정해보라.
+
+*시간 측정 메소드 작성*
+
+우선 알고리즘 수행시간을 측정하는 클래스를 작성한다.
+
+#+BEGIN_SRC java
+  // StopWatch: 알고리즘 시간측정을 위한 템플릿 메서드 클래스이다.
+  class Stopwatch {
+      // beforeTask: 매 루프마다 초기화할 작업을 지정한다. 이 부분은
+      // 시간 측정에서 빠진다.
+      public void beforeTask() { }
+      // doTask: 시간을 측정할 작업을 지정한다.
+      public void doTask() { }
+      // afterTask: 매 루프가 끝날때마다 실행할 작업을 지정한다. 이
+      // 부분은 시간 측정에서 빠진다.
+      public void afterTask() { }
+      // runTest: 작업을 times 만큼 실행한 시간(밀리세컨드)을 측정한다.
+      public final long runTest(int times)
+      {
+	  long elapsed = 0;
+	  for (int i = 0; i < times; i++) {
+	      beforeTask();
+	    
+	      long start = System.currentTimeMillis();
+	      doTask();
+	      long end = System.currentTimeMillis();
+	      elapsed += end - start;
+	    
+	      afterTask();
+	  }
+	  return elapsed;
+      }
+  }
+#+END_SRC
+
+시험적으로, 위에서 만들어둔 일반화된 Quicksort에 적용해본다.
+
+#+BEGIN_SRC java
+  // Sorting 시간을 측정하고, 진행률을 보여준다.
+  public static void main(String[] args) {
+      final int times = 10000; // 테스트 반복 횟수이다.
+      Stopwatch testSort = new Stopwatch() {
+	      final int size = 1000;              // 정렬할 배열의 크기이다.
+	      Integer[] data = new Integer[size]; // 정렬할 배열이다.
+	      int cntTask = 0;	                // 지금까지 완료한 테스트 개수이다.
+	      final int MAXCOL = 120;             // 100%에 해당하는 진행률 표시 길이이다.
+	      int curCol = 0;			// 현재까지 찍힌 진행률 표시 길이이다.
+	      @Override
+	      public void beforeTask()
+	      {
+		  for (int i = 0; i < size; i++)
+		      data[i] = Quicksort.rand(0, 99);
+	      }
+	      @Override
+	      public void doTask()
+	      {
+		  Quicksort.sort(data, 0, size-1, new Icmp());
+	      }
+	      // getTaskRatio: 완료된 task의 비율을 나타낸다.(0~1)
+	      private double getTaskRatio()
+	      {
+		  return (double)cntTask/(double)times;
+	      }
+	      // getProgressRatio: 진행률이 찍힌 비율을 나타낸다.(0~1)
+	      private double getProgressRatio()
+	      {
+		  return (double)curCol/(double)MAXCOL;
+	      }
+	      @Override
+	      public void afterTask()
+	      {
+		  ++cntTask;
+		  if (getTaskRatio() > getProgressRatio()) {
+		      // 진행률을 보여준다(MAXCOL만큼 찍으면 100%에 도달했다는 것이다)
+		      while (getTaskRatio() > getProgressRatio()) {
+			  System.out.print('=');
+			  curCol++;
+		      }
+		  }
+	      }
+	  };
+
+      long elapsed = testSort.runTest(times);
+      System.out.printf("\nelapsed time: %d millisecond", elapsed);
+  }
+
+#+END_SRC
+
+이제 정적인 =Integer= 타입을 타겟으로 하는 퀵소트 정렬을
+구현해본다. =Cmp= 인터페이스는 =Object= 타입 두개를 받는 =cmp=
+메서드를 구현해야 하기 때문에, =Integer= 타입 객체를 두개 받는 =cmp=
+메서드를 구현하는데는 적합하지 않다. 따라서 =StaticIcmp= 라는 새
+인터페이스를 작성하고, 그것을 구현하는 =Incremental= Functor 클래스를
+만든다.
+
+#+BEGIN_SRC java
+  // StaticIcmp: Integer를 대상으로 하는 Cmp 객체
+  interface StaticIcmp {
+      public int cmp(Integer n1, Integer n2);
+  }
+  // Incremental: Integer 객체간 오름차순 비교
+  class Increment implements StaticIcmp {
+      public int cmp(Integer n1, Integer n2)
+      {
+	  int i1 = n1.intValue();
+	  int i2 = n2.intValue();
+	  if (i1 < i2)
+	      return -1;
+	  else if (i1 > i2)
+	      return 1;
+	  else
+	      return 0;
+      }
+  }
+#+END_SRC
+
+기존의 =Quicksort.sort= 를 오버로딩하여 =Integer[]= 타입의 배열과
+=StaticIcmp= 타입의 비교 연산자를 받도록 새 =sort= 메서드를 만든다.
+
+#+BEGIN_SRC java
+  static void sort(Integer[] v, int left, int right, StaticIcmp cmp)
+  {
+      int i, last;
+
+      if (left >= right)
+	  return;
+      iswap(v, left, rand(left, right));
+      last = left;
+      for (i = left+1; i <= right; i++)
+	  if (cmp.cmp(v[i], v[left]) < 0)
+	      iswap(v, ++last, i);
+      iswap(v, left, last);
+      sort(v, left, last-1, cmp);
+      sort(v, last+1, right, cmp);
+  }
+  static void iswap(Integer v[], int i, int j)
+  {
+      Integer temp;
+      temp = v[i];
+      v[i] = v[j];
+      v[j] = temp;
+  }
+#+END_SRC
+
+=sort= 메서드는 타입 시그니처가 바뀌고 =swap= 대신에 =iswap= 을
+호출하도록 바뀌었을 뿐 나머지 동작은 동일하다. 그리고 =Integer[]=
+타입을 받는 =Quicksort.iswap= 메서드를 새로 만들었다. (=swap= 메서드를
+오버로딩 하지 않은 이유는 일반화된 =sort= 함수로 테스트를 할 때 섞일
+염려가 있기 때문이다.)
+
+이제, 기존의 성능 테스트 코드가 Integer에 적용되도록 테스트 코드를
+수정한다. =testSort= 익명 객체의 =doTask()= 함수만 살짝 바꾸어 주면
+된다.
+
+#+BEGIN_SRC java
+  @Override
+  public void doTask()
+  {
+      Quicksort.sort(data, 0, size-1, new Increment());
+  }
+#+END_SRC
+
+그러면 =StaticIcmp= 타입 시그니처에 맞추어 =Integer[]= 를 타겟으로
+하는 퀵소트 함수에 디스패치될것이다.
+
+*수행결과*
+
+- 일반화된 =sort= 메서드: 1294ms, 1312ms, 1298ms, 1301ms, 1296ms; 평균 1300.2ms 
+- 특수화된 =sort= 메서드: 1142ms, 1151ms, 1113ms, 1145ms, 1133ms; 평균 1136.8ms
+
+이 결과에 따르면, 타입변환에 의해 수행시간의 14.37%가 증가한다.
+
+
+** O 표기법
+
+** 연습
+
+*** 연습 2-3.
+
+퀵소트가 최악으로 작동하게 만드는 입력값은 어떤 것이 있을까? 여러분의
+라이브러리에 있는 퀵소트가 느리게 돌아가는 입력값을 찾아보라. 그리고
+찾는 과정을 자동화해서 많은 실험을 쉽게 수행할 수 있도록 하라.
+
+#+BEGIN_SRC c
+  /* 
+   ,* quick-worst.c:
+   ,* qsort 함수의 최악의 케이스를 찾는다.
+   ,*/
+  #include <Windows.h>	/* GetTickCount */
+  #include <stdio.h>	
+  #include <stdlib.h>	/* qsort, rand */
+  #include <string.h>	/* memcpy */
+
+  enum __FOR_TEST {
+    NMEMB       = 50000,  /* 테스트할 배열의 크기 */
+    NTEST       = 10000,	/* 테스트 횟수 */
+  };
+
+  enum __FOR_PRINT {
+    ITEM_INLINE = 15,	/* 한 줄에 출력할 원소 개수 */
+    MAX_COL     = 120,	/* 콘솔의 최대 열 */
+  };
+
+  /* icmp: qsort에 쓰일 int형 비교함수 */
+  int icmp(const void *p1, const void *p2)
+  {
+    int v1, v2;
+    v1 = *(int *)p1;
+    v2 = *(int *)p2;
+    if (v1 < v2)
+      return -1;
+    else if (v1 > v2)
+      return 1;
+    else
+      return 0;
+  }
+
+  /* time_to_sort: 주어진 배열에 대해 qsort 수행 시간을 측정한다 */
+  int time_to_sort(int v[], int nmemb)
+  {
+    DWORD start, end;
+    start = GetTickCount();
+    qsort(v, nmemb, sizeof(int), icmp);
+    end = GetTickCount();
+    return (int) (end - start);
+  }
+
+  /* fill_rand: 주어진 배열을 [0, nmemb) 범위의 임의의 값으로 채운다 */
+  void fill_rand(int v[], int nmemb)
+  {
+    for (int i = 0; i < nmemb; i++)
+      v[i] = rand() % nmemb;
+  }
+
+  double test_ratio(int cur_test) {
+    return (double)cur_test / (double)NTEST;
+  }
+
+  double progress_ratio(int cur_col) {
+    return (double)cur_col / (double)MAX_COL;
+  }
+
+  int main()
+  {
+    int worst_arr[NMEMB];
+    int worst_time = -1;
+
+    int v[NMEMB],		/* 정렬 대상 */
+      origin[NMEMB];	/* 정렬 전 v의 사본 */
+
+    /* 초기 값은 역순 정렬된 상태  */
+    for (int i = 0; i < NMEMB; i++)
+      v[i] = NMEMB-i;
+    memcpy(worst_arr, v, sizeof v);
+    worst_time = time_to_sort(v, NMEMB);
+    /* 배열을 랜덤하게 채우며 worst case를 찾는다. */
+    int col = 0;	 /* col: 진행 막대를 찍은 개수 */
+    for (int i = 0; i < NTEST; i++) {
+      fill_rand(v, NMEMB);
+      memcpy(origin, v, sizeof v);
+      int elapsed = time_to_sort(v, NMEMB);
+      if (elapsed > worst_time) {
+	worst_time = elapsed;
+	memcpy(worst_arr, origin, sizeof origin);
+      }
+      /* 진행 막대를 표시한다. */
+      if (test_ratio(i) > progress_ratio(col)) {
+	while (test_ratio(i) > progress_ratio(col)) {
+	  fputc('=', stderr);
+	  col++;
+	}
+      }	
+    }
+    printf("==== Worst Case ===\n");
+    /* ITEM_INLINE 개수 만큼 끊어서 출력한다 */
+    for (int i = 0; i < NMEMB; i+=ITEM_INLINE) {
+      for (int j = 0; j < ITEM_INLINE; j++) {
+	if (i+j < NMEMB)
+	  printf("%d, ", worst_arr[i+j]);
+	else
+	  break;
+      }
+      printf("\n");
+    }
+    printf("elapsed time: %d ms\n", worst_time);
+    return 0;
+  }
+#+END_SRC
+
+*수행결과*
+
+결과는 얻었으나, 별다른 경향성을 찾을 수 없었다. 역순의 배열이
+최악으로 나타나지 않은 것으로 봐서는, Windows에서 clang의 qsort는
+=v[0]= 을 pivot으로 삼지 않는 것 같다.
+
+*** 연습 2-4.
+
+정수가 n개 들어 있는 배열을 최대한 느리게 정렬하는 알고리즘 하나를
+설계하고 구현해 보라. 단, 정직하게 만들어야 한다. 즉, 알고리즘은 계속
+진행하여 끝에 이르러 종료해야 하며, 시간을 낭비하는 반복문을 돌리는
+식의 속임수를 쓰지 말고 구현해야 한다. 만든 알고리즘의 복잡도는 n의
+함수로써 어떻게 표현할 수 있는가?
+
+*포기*
+
+문제의 의의를 이해하지 못하겠다. 느린 알고리즘을 고안하는 것이 무슨
+의미가 있단 말인가?
+
+** 크기가 커지는 배열들
+
+=Nameval= 타입을 위한 가변 배열을 구현한다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char *name;
+    int  value;
+  };
+
+  struct NVtab {
+    int     nval;       /* 현재 원소의 개수 */
+    int     max;        /* 현재 할당된 공간의 크기 */
+    NameVal *nameval;   /* 이름-값 쌍의 배열 */
+  } nvtab;
+
+  enum { NVINIT = 1, NVGROW = 2 };
+
+  /* addname: 새 이름(name)과 값(value)을 nvtab에 추가 */
+  int addname(Nameval newname)
+  {
+    Nameval *nvp;
+
+    if (nvtab.nameval == NULL) {          /* 처음 호출되었을 경우 */
+      nvtab.nameval =
+        (Nameval *) malloc(NVINIT * sizeof(Nameval));
+      if (nvtab.nameval == NULL)
+        return -1;
+      nvtab.max = NVINIT;
+      nvtab.nval = 0;
+    } else if (nvtab.nval >= nvtab.max) { /* 크기를 늘려야 할 경우 */
+      nvp = (Nameval *) realloc(nvtab.nameval,
+                (NVGROW*nvtab.max) * sizeof(Nameval));
+      if (nvp == NULL)
+        return -1;
+      nvtab.max *= NVGROW;
+      nvtab.nameval = nvp;
+    }
+    nvtab.nameval[nvtab.nval] = newname;
+    return nvtab.nval++;
+  }
+#+END_SRC
+
+=NVtab= 에서 한 원소를 지우기 위해서는 뒤따르는 원소를 모두 한칸씩
+앞으로 옮기고, =NVtab.nval= 을 하나 줄여야 한다.
+
+#+BEGIN_SRC c
+  /* delname: nvtab에서 첫 번째로 일치하는 원소를 제거 */
+  int delname(char *name)
+  {
+    int i;
+    for (i = 0; i < nvtab.nval; i++)
+      if (strcmp(nvtab.nameval[i].name, name) == 0) {
+        memmove(nvtab.nameval+i, nvtab.nameval+i+1,
+                (nvtab.nval-(i+1)) * sizeof(Nameval));
+        nvtab.nval--;
+        return 1;
+      }
+    return 0;
+  }
+#+END_SRC
+
+*추가설명*
+
+- memcpy는 메모리 영역이 겹칠 경우 서로 덮어쓸 여지가 있지만,
+  memmove는 메모리 영역이 겹치더라도 문제가 발생하지 않는다. 언제나
+  memmove를 우선적으로 고려하는 것이 좋다.
+- 배열은 상수 시간에 임의접근할 수 있어 이진 검색과 퀵소트를 쉽게
+  구현할 수 있다.
+- 원소가 자주 바뀐다면 배열을 쓸때 큰 비용이 필요하다.
+
+** 연습
+
+*** 연습 2-5.
+
+앞에서 만든 코드에서 delname은 원소를 삭제해서 남은 메모리를 realloc을
+통해 돌려주지 않는다. 남은 메모리를 돌려주는 것이 더 나은 설계인지
+판단하라. 또, 그 판단 근거도 설명해보라.
+
+*나의 생각*
+
+메모리 할당은 비싼 연산이다. 만약 =delname= 할 일이 많다면, (물론
+=delname= 자체가 상대적으로 비싸지만) 성능 저하의 부담을
+떠안으면서까지 =realloc= 을 매번 호출하지는 않을 것이다. 또한,
+=delname= 호출 후에 또다시 =addname= 을 한다면 이중으로 시간을
+소모하게 될 것이다. =delname= 은 지금의 구현으로 충분하다고 본다.
+
+*** 연습 2-6.
+
+삭제되었다는 것을 표시하도록 =addname= 과 =delname= 을 고쳐보라.
+프로그램의 나머지 부분이 이 변화에서 얼마나 영향을 받을 것인지도
+생각해보라.
+
+*수정된 =addname=*
+
+#+BEGIN_SRC c
+  /* find_space: nvtab에 삭제된 공간으로 표시된 부분을 찾음 */
+  int find_space() {
+    int i;
+    for (i = 0; i < nvtab.nval; i++)
+      if (nvtab.nameval[i].name == NULL)
+        break;
+    return i;
+    /* 찾으면 [0, nval), 못찾으면 nval 반환 */
+  }
+
+  /* addname: 새 이름(name)과 값(value)을 nvtab에 추가 */
+  int addname(Nameval newname)
+  {
+    Nameval *nvp;
+    int idx;
+
+    if (nvtab.nameval == NULL) {          /* 처음 호출되었을 경우 */
+      nvtab.nameval =
+        (Nameval *) malloc(NVINIT * sizeof(Nameval));
+      if (nvtab.nameval == NULL)
+        return -1;
+      nvtab.max = NVINIT;
+      nvtab.nval = 0;
+    } else if ((idx = find_space())
+               != nvtab.nval) {   /* 빈 공간이 있을 경우 */
+      nvtab.nameval[idx] = newname;
+      return idx;
+    } else if (nvtab.nval >= nvtab.max) { /* 크기를 늘려야 할 경우 */
+      nvp = (Nameval *) realloc(nvtab.nameval,
+                                (NVGROW*nvtab.max) * sizeof(Nameval));
+      if (nvp == NULL)
+        return -1;
+      nvtab.max *= NVGROW;
+      nvtab.nameval = nvp;
+    }
+    nvtab.nameval[nvtab.nval] = newname;
+    return nvtab.nval++;
+  }
+#+END_SRC
+
+빈공간을 =newname= 의 이름이 =NULL= 인 경우로 가정하였고, 이러한
+위치를 찾는 함수인 =find_space()= 를 추가하고 빈공간이 있을 경우 그
+자리에 추가하는 로직을 추가하였다.
+
+*수정된 =delname=*
+
+#+BEGIN_SRC c
+  /* delname: nvtab에서 첫 번째로 일치하는 원소를 제거 */
+  int delname(const char *name, char **origin)
+  {
+    int i;
+    for (i = 0; i < nvtab.nval; i++)
+      if (strcmp(nvtab.nameval[i].name, name) == 0) {
+        if (origin != NULL)
+          ,*origin = nvtab.nameval[i].name;
+        nvtab.nameval[i].name = NULL;
+        return 1;
+      }
+    return 0;
+  }
+#+END_SRC
+
+기존에 있던 문자열이 정적 할당된 문자열인지 동적 할당된 문자열인지 알
+수 없기 때문에 그냥 지우는 대신 =delname= 이 기존의 문자열을
+호출자에게 주소값을 통해 돌려주도록 수정하였다.
+
+
+*영향 평가*
+
+이제 더이상 =nvtab.nval= 이 실제 원소의 값을 말해주지 않는다. 원소의
+개수를 세고싶다면 이름이 =NULL= 이 아닌 원소를 세는 $O(n)$ 알고리즘을
+이용해야 한다. 또한 =addname= 도 $O(n)$ 알고리즘이 되었으므로 배열이
+커지면 성능 저하가 있을 것이다.
+
+** 리스트
+
+=Nameval= 을 리스트의 노드로 만든다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char    *name;
+    int     value;
+    Nameval *next;   /* 다음 아이템 */
+  };
+#+END_SRC
+
+리스트는 배열과는 달리 동적으로 만들어야 한다.
+
+#+BEGIN_SRC c
+  /* newitem: 주어진 name과 value로 새 노드를 만듬 */
+  Nameval *newitem(char *name, int value)
+  {
+    Nameval *newp;
+    /* emalloc은 malloc과 동일한 사용자 정의 함수 */
+    newp = (Nameval *) emalloc(sizeof (Nameval));
+    newp->name = name;
+    newp->value = value;
+    newp->next = NULL;
+    return newp;
+  }
+#+END_SRC
+
+가장 빠른 아이템 추가 방법은 리스트의 앞부분에 노드를 추가하는 것이다.
+
+#+BEGIN_SRC c
+  /* addfront: newp를 listp를 앞쪽에 추가 */
+  Nameval *addfront(Nameval *listp, Nameval *newp)
+  {
+    newp->next = listp;
+    return newp;
+  }
+#+END_SRC
+
+리스트 끝에 아이템을 추가하는 알고리즘은 $O(n)$ 의 시간 복잡도를 가진다.
+
+#+BEGIN_SRC c
+  /* addend: newp를 listp의 끝에 추가 */
+  Nameval *addend(Nameval *listp, Nameval *newp)
+  {
+    Nameval *p;
+
+    if (listp == null)
+      return newp;
+    for (p = listp; p->next != NULL; p = p->next)
+      ;
+    p->next = newp;
+    return listp;
+  }
+#+END_SRC
+
+리스트 아이템을 탐색하는 알고리즘도 $O(n)$ 의 시간 복잡도를 가진다.
+리스트 아이템으로 임의 접근하는 데 $O(n)$ 시간 복잡도를 갖기 때문에,
+이진탐색을 쓸 수 없다.
+
+#+BEGIN_SRC c
+  /* lookup: listp에서 이름을 선형탐색으로 찾는다 */
+  Nameval *lookup(Nameval *listp, char *name)
+  {
+    for ( ; listp != NULL; listp = listp->next)
+      if (strcmp(name, listp->name) == 0)
+        return listp;
+    return NULL;     /* 일치하는 것이 없음 */
+  }
+#+END_SRC
+
+foreach를 구현한다.
+
+#+BEGIN_SRC c
+  /* apply: listp의 원소마다 fn을 실행 */
+  void apply(Name *listp,
+             void (*fn)(Nameval*, void*),
+             void *arg)
+  {
+    for ( ; listp != NULL; listp = listp->next)
+      (*fn)(listp, arg);     /* 함수 호출 */
+  }
+#+END_SRC
+
+예를 들어, 리스트 원소를 모두 출력할 수 있는 보조함수를 만든다.
+
+#+BEGIN_SRC c
+  /* printnv: 인자로 받은 출력 형식으로 name과 value출력 */
+  void printnv(Nameval *p, void *arg)
+  {
+    char *fmt;
+
+    fmt = (char *) arg;
+    printf(fmt, p->name, p->value);
+  }
+  ...
+
+  apply(nvlist, printnv, "%s: %x\n");
+#+END_SRC
+
+리스트를 제거하는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* freeall: listp의 모든 아이템에 대한 메모리 할당 해제 */
+  void freeall(Nameval *listp)
+  {
+    Nameval *next;
+
+    for ( ; listp != NULL; listp = next) {
+      next = listp->next;
+      /* name은 다른 곳에서 해제되었다고 가정함 */
+      free(listp);
+    }
+  }
+#+END_SRC
+
+리스트 원소 하나를 없애는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* delitem: listp에서 처음으로 나오는 name을 제거 */
+  Nameval *delitem(Nameval *listp, char *name)
+  {
+    Nameval *p, *prev;
+
+    prev = NULL;
+    for (p = listp; p != NULL; p = p->next) {
+      if (strcmp (name, p->name) == 0) {
+        if (prev == NULL)
+          listp = p->next;
+        else
+          prev->next = p->next;
+        free(p);
+        return listp;
+      }
+      prev = p;
+    }
+    eprintf("delitem: %s not in list", name);
+    return NULL;
+  }
+#+END_SRC
+
+** 연습
+
+*** 연습 2-7.
+
+리스트 복사, 두 리스트 하나로 합치기, 한 리스트 두개로 분리하기, 특정
+원소 앞이나 뒤에 새 원소 추가하기 등의 리스트 연산을 만들어보라. 또,
+앞에 추가하는 연산과 뒤에 추가하는 연산 중 어느 것이 더 까다로운지
+설명해보라. 또, 이 글에서 다룬 함수를 얼마나 많이 써먹을 수 있는지, 또
+얼마나 많은 코드를 새로 만들어야 할 지 생각해보라.
+
+*리스트 복사*
+
+#+BEGIN_SRC c
+  /* cplist: 리스트를 복사하여 돌려준다. */
+  Nameval *cplist(Nameval *src)
+  {
+    Nameval *newp, *p, *psrc;
+    if (src == NULL)
+      return NULL;
+    newp = newitem(src->name, src->value);
+    p = newp;
+    for (psrc = src->next; psrc != NULL; psrc = psrc->next) {
+      p->next = newitem(psrc->name, psrc->value);
+      p = p->next;
+    }
+    return newp;
+  }
+#+END_SRC
+
+*두 리스트 하나로 합치기*
+
+#+BEGIN_SRC c
+  /* append: 두 리스트를 결합한다. */
+  Nameval *append(Nameval *l1, Nameval *l2)
+  {
+    Nameval *p;
+    if (l1 == NULL)
+      return l2;
+    /* l1의 마지막 노드를 찾는다. */
+    for (p = l1; p->next != NULL; p = p->next)
+      ;
+    p->next = l2;
+    return l1;
+  }
+#+END_SRC
+
+*한 리스트 두개로 분리하기*
+
+#+BEGIN_SRC c
+  /* take: 리스트를 첫 N개 원소와 그 나머지 원소들로 분리한다 */
+  Nameval *take(Nameval *listp, int n, Nameval **rest)
+  {
+    Nameval *p, *prev;
+
+    /* n번째 원소를 찾는다 */
+    int i = 0;
+    prev = NULL;
+    for (p = listp; p != NULL; p = p->next) {
+      if (i++ == n)
+        break;
+      prev = p;
+    }
+    if (prev) {
+      ,*rest = p;
+      prev->next = NULL;
+    } else {
+      ,*rest = listp;
+    }
+    return listp;
+  }
+#+END_SRC
+
+*특정 원소 앞에 추가하기*
+
+#+BEGIN_SRC c
+  /* insert_front: 리스트에서 name을 찾아 그 앞에 원소를 추가한다. */
+  Nameval *insert_front(Nameval *listp, char *name, Nameval *newp)
+  {
+    Nameval *p, *prev;
+    prev = NULL;
+    for (p = listp; p != NULL; p = p->next) {
+      if (strcmp(p->name, name) == 0) {
+        if (p == listp)
+          listp = addfront(listp, newp);
+        else
+          prev->next = addfront(p, newp);
+        break;
+      }
+      prev = p;
+    }
+    return listp;
+  }
+#+END_SRC
+
+*특정 원소 뒤에 추가하기*
+
+#+BEGIN_SRC c
+  /* insert_front: 리스트에서 name을 찾아 그 뒤에 원소를 추가한다. */
+  Nameval *insert_back(Nameval *listp, char *name, Nameval *newp)
+  {
+    Nameval *p;
+    for (p = listp; p != NULL; p = p->next) {
+      if (strcmp(p->name, name) == 0) {
+        newp->next = p->next;
+        p->next = newp;
+        break;
+      }
+    }
+    return listp;
+  }
+#+END_SRC
+
+*설명*
+
+- 단순 연결리스트는 자신의 앞에 누가 서있는지 모르기 때문에 어떤
+  원소의 앞에 다른 원소를 추가하기 위해서는 선행 노드를 관리하는
+  변수를 따로 두어야 한다. 더불어, 찾은 노드가 머리 노드일 경우,
+  리스트의 시작 위치가 바뀌게 되므로 더욱 까다롭다.
+- 우리가 글에서 다룬 리스트 함수는 새 노드를 생성하고, 앞에 달거나,
+  뒤에 추가하고, 탐색하고, 일괄적용하고, 삭제하는 함수들이다. 여기에
+  이 연습 문제에서 만든 함수들을 더하면 가장 많이 사용하는 리스트
+  함수들의 목록이라 볼 수 있을 것이다. 한가지, reverse 함수가 없는
+  것이 아쉽다. 이것까지 포함하면, 더이상 리스트를 관리하기 위한 많은
+  코드를 작성할 필요가 없을 것이라고 생각한다.
+
+
+*** 연습 2-8.
+
+리스트에서 원소의 순서를 거꾸로 만드는 reverse 루틴을 만들어 보라. 이
+때, 재귀적 방식과 반복적 방식을 이용해서 두 버전을 만들어보라. 새
+리스트 아이템을 생성하면 안 되며, 기존의 아이템만 써서 작업해야 한다.
+
+*재귀*
+
+#+BEGIN_SRC c
+  /* reverse: 리스트 연결방향을 뒤집는다. */
+  Nameval *reverse(Nameval *listp)
+  {
+    if (listp == NULL || listp->next == NULL)
+        return listp;
+    Nameval *next = listp->next;
+    listp->next = NULL;
+    return addend(reverse(next), listp);
+  }
+#+END_SRC
+
+간단하다.
+
+*비재귀*
+
+#+BEGIN_SRC c
+  Nameval *reverse(Nameval *listp)
+  {
+    if (listp == NULL || listp->next == NULL)
+        return listp;
+    Nameval *pre, *p, *n;
+    pre = NULL;
+    p = listp;
+    n = listp->next;
+    while(p->next != NULL) {
+      p->next = pre;
+      pre = p;
+      p = n;
+      n = n->next; 
+    }
+    p->next = pre;
+    return p;
+  }
+#+END_SRC
+
+굉장히 비직관적이다.
+
+*** 연습 2-9.
+
+아무 때나 쓸 수 있는 List 타입을 C언어로 만들어보라. 가장 쉬운 방법은,
+리스트 아이템마다 아무 데이터나 가리킬 수 있는 =void*= 를 가지게 하는
+것이다. 또 C++에서 템플릿을 사용해서 똑같은 타입을 만들어보라. 자바의
+오브젝트 타입을 써서 같은 일을 해보라. 그리고 각 언어의 장단점은
+무엇인가?
+
+*포기*
+
+언어가 알고리즘 구현에 어떻게 도움을 주는지는 3장에서 다루기 때문에
+거기서 살펴보는 것으로 하고, 똑같은 작업을 단순히 언어만 바꿔서 하는
+것은 대개 인간이 타입 템플릿을 찍어내는 복사 붙여넣기에 지나지 않는다.
+
+*** 연습 2-10.
+
+여러분이 작성한 리스트 루틴들이 올바로 작동하는지 검사하는 테스트를
+여러 개 만들어보라. 6장에서 우리는 테스트 방법에 대해 깊이 다룰 것이다.
+
+*테스트들*
+
+아래는 내가 리스트 코드를 작성하며 작성했던 테스트 코드들이다. 대부분
+컴퓨터가 데이터를 찍어내고 사람이 데이터의 일관성을 감시하는 방식이라
+현대적인 테스트와는 차이가 있지만...
+
+#+BEGIN_SRC c
+  void test_cplist()
+  {
+    Nameval *list1 = make_testlist();
+    Nameval *list2 = cplist(list1);
+    /* 모든 원소가 메모리 상에서 다른 위치를 갖는가? */
+    int same = 1;
+    Nameval *p1, *p2;
+    p2 = list2;
+    for (p1 = list1; p1 != NULL; p1 = p1->next) {
+      if (p1 != p2) {
+        same = 0;
+        break;
+      }
+      p2 = p2->next;
+    }
+    if (same) {
+      printf("ERR: list2 is exactly same with original!\n");
+      return;
+    } else {
+      printf("list2 is a copy of list1.\n");
+    }
+
+    printf("list1:");
+    apply(list1, &printnv, "[%s %d] ");
+    printf("\n");
+    printf("list2:");
+    apply(list2, &printnv, "[%s %d] ");
+    printf("\n");
+  }
+
+
+  void test_make_testlist()
+  {
+    Nameval *list = make_testlist();
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+    Nameval *list2 = make_testlist();
+    if (list == list2) {
+      printf("list is a singleton.\n");
+    } else {
+      printf("ERR: list is not a sigleton!\n");
+    }
+  }
+
+
+  void test_append()
+  {
+    Nameval *test = make_testlist();
+    Nameval *list1 = cplist(test);
+    Nameval *list2 = newitem("D", 'D');
+    list2 = addfront(list2, newitem("C", 'C'));
+    list2 = addfront(list2, newitem("B", 'B'));
+    list2 = addfront(list2, newitem("A", 'A'));
+    Nameval *newhead = append(list1, list2);
+    apply(newhead, &printnv, "[%s %d] ");
+    printf("\n");
+  }
+
+  void test_take()
+  {
+    Nameval *test = make_testlist();
+    Nameval *rest;
+    Nameval *til3;
+    til3 = take(test, 3, &rest);
+    apply(til3, &printnv, "[%s %d] ");
+    printf("\n");
+    apply(rest, &printnv, "[%s %d] ");
+    printf("\n");
+  }
+
+  void test_insert_front()
+  {
+    Nameval *test = make_testlist();
+    Nameval *list = cplist(test);
+    Nameval *new1 = newitem("zero", 0);
+    Nameval *new2 = newitem("onepoint", 1);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+    list = insert_front(list, "two", new2);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+    list = insert_front(list, "one", new1);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+  }
+
+  void test_insert_back()
+  {
+    Nameval *test = make_testlist();
+    Nameval *list = cplist(test);
+    Nameval *new1 = newitem("zero", 0);
+    Nameval *new2 = newitem("onepoint", 1);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+    list = insert_back(list, "two", new2);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+    list = insert_back(list, "one", new1);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+  }
+
+  void test_reverse()
+  {
+    Nameval *test = make_testlist();
+    Nameval *list = cplist(test);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+    list = reverse(list);
+    apply(list, &printnv, "[%s %d] ");
+    printf("\n");
+  }
+#+END_SRC
+
+** 트리
+
+이진 탐색 트리를 만들어본다. 우선 트리 노드를 정의한다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char *name;
+    int  value;
+    Nameval *left;    /* lesser */
+    Nameval *right;   /* greater */
+  };
+#+END_SRC
+
+트리에 노드를 삽입하는 연산을 정의한다.
+
+#+BEGIN_SRC c
+  /* insert: newp를 treep에 추가하고 treep를 리턴 */
+  Nameval *insert(Nameval *treep, Nameval *newp)
+  {
+    int cmp;
+    if (treep == NULL)
+      return newp;
+    cmp = strcmp(newp->name, treep->name);
+    if (cmp == 0)
+      weprintf("insert: duplicated entry %s ignored",
+               newp->name);
+    else if (cmp < 0)
+      treep->left = insert(treep->left, newp);
+    else
+      treep->right = insert(treep->right, newp);
+    return treep;
+  }
+#+END_SRC
+
+원소를 찾는 연산을 정의한다.
+
+#+BEGIN_SRC c
+  /* lookup: treep 트리에서 name 검색 */
+  Nameval *lookup(Nameval *treep, char *name)
+  {
+    int cmp;
+
+    if (treep == NULL)
+      return NULL;
+    cmp = strcmp(name, treep->name);
+    if (cmp == 0)
+      return treep;
+    else if (cmp < 0)
+      return lookup(treep->left, name);
+    else
+      return lookup(treep->right, name);
+  }
+#+END_SRC
+
+이 함수는 꼬리재귀로 구현되었다. 따라서 조금만 바꾸어 준다면
+반복문으로 무리없이 변경할 수 있다.
+
+#+BEGIN_SRC c
+  /* nrlookup: 비재귀적으로 treep 트리에서 name 검색 */
+  Nameval *nrlookup(Nameval *treep, char *name)
+  {
+    int cmp;
+
+    while (treep != NULL) {
+      cmp = strcmp(name, treep->name);
+      if (cmp == 0)
+        return treep;
+      else if (cmp < 0)
+        treep = treep->left;
+      else
+        treep = treep->right;
+    }
+    return NULL;
+  }
+#+END_SRC
+
+아래는 중위순회(in-order traversal)로 트리에 연산을 적용하는 apply
+함수이다.
+
+#+BEGIN_SRC c
+  /* applyinorder: treepㅇ fn을 중위 순회법으로 적용 */
+  void applyinorder(Nameval *treep,
+                    void (*fn)(Nameval*, void*),
+                    void *arg)
+  {
+    if (treep == NULL)
+      return;
+    applyinorder(treep->left, fn, arg);
+    (*fn)(treep, arg);
+    applyinorder(treep->right, fn, arg);
+  }
+#+END_SRC
+
+중위 순회의 한가지 예시는 트리의 모든 원소를 출력하는 경우이다. 정렬을
+할 때에도 이진 탐색 트리에 담았다가 중위순회로 하나씩 꺼내오며 정렬할
+수 있다.
+
+후위 순회(post-order traversal)은 자식들을 모두 방문한 다음 현재
+노드에 대한 연산을 호출한다.
+
+#+BEGIN_SRC c
+  /* applypostorder: treep에 fn을 후위 순회로 적용 */
+  void applypostorder(Nameval *treep,
+                      void (*fn)(Nameval*,void*),
+                      void *arg)
+  {
+    if (treep == NULL)
+      return;
+    applypostorder(treep->left, fn, arg);
+    applypostorder(treep->right, fn, arg);
+    (*fn)(treep, arg);
+  }
+#+END_SRC
+
+후위 순회는 노드에 대한 연산이 하위 노드에 의존할 때 쓰인다. 트리의
+높이를 계산하거나, 그림 프로그램에서 트리 모양을 그리는 작업(하위
+노드를 먼저 그려야 필요 공간을 계산하기 수월하다), 저장된 데이터의
+전체 용량을 구하는 작업 등에서 쓴다.
+
+이 책은 전위 순회에 대해 "거의 쓰이지 않으므로" 다루지 않는다.(74p)
+
+이진 탐색 트리는 잘 쓰이지 않으나, B 트리, 파스 트리 등에 트리가
+응용된다.
+
+** 연습
+
+*** 연습 2-11.
+
+lookup과 nrlookup의 성능을 비교해보라. 재귀 함수의 가동 비용은 반복
+기법과 비교할 때 얼마나 더 들까?
+
+*성능 테스트*
+
+우선 함수의 실행시간을 재는 함수를 만든다.
+
+#+BEGIN_SRC c
+  #include <sys/time.h>           /* gettimeofday */
+  #include <time.h>
+
+  /* get_elapsed: 주어진 함수의 실행시간을 잰다. */
+  double get_elapsed(void (*fn)(void*), void* arg)
+  {
+    double elapsed_time;
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
+    (*fn)(arg);
+    gettimeofday(&t2, NULL);
+
+    elapsed_time = (t2.tv_sec - t1.tv_sec) * 1000.0; /* sec to ms */
+    elapsed_time += (t2.tv_usec - t1.tv_usec) / 1000.0; /* us to ms */
+    return elapsed_time;
+  }
+#+END_SRC
+
+*테스트용 트리*
+
+성능 테스트를 하기 위해서는 매우 큰 트리가 필요하다. 이러한 트리를
+자동으로 만드는 코드부터 쓰자.
+
+책에서는 굳이 구현하지 않았지만, 편의를 위하여 새 트리노드를
+만들어주는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* newitem: 새로운 Nameval 노드를 만듬 */
+  Nameval *newitem(char *name, int value)
+  {
+    Nameval *x = (Nameval *)malloc(sizeof(Nameval));
+    x->name = name;
+    x->value = value;
+    x->left = NULL;
+    x->right = NULL;
+    return x;
+  }
+#+END_SRC
+
+랜덤한 이름을 생성해주는 함수를 만든다.
+
+#+BEGIN_SRC c
+  enum {
+        LEN_DEFAULT = 7,          /* 이름 길이 기본값 */
+        LEN_VAR     = 6,          /* 이름 길이 가변값(0보다 커야함) */
+  };
+
+  /* random_name: 영어 소문자로 된 랜덤한 문자열을 만든다. */
+  char *random_name()
+  {
+    int nalpha = 'z' - 'a' + 1;
+    int len = LEN_DEFAULT;
+    len += rand()%LEN_VAR;
+  
+    char *name = malloc((len+1)*sizeof(char));
+    for (int i = 0; i < len; i++)
+      name[i] = rand() % nalpha + 'a';
+    name[len] = '\0';
+  
+    return name;
+  }
+#+END_SRC
+
+랜덤한 트리를 만들어서 반환한다. 이 함수를 통해 만들어진 treep는
+싱글톤임에 유의하라. lookup 함수와 nrlookup 함수에 동일한 실험을 할 수
+있도록, 마지막에 삽입된 이름을 제공한다.
+
+#+BEGIN_SRC c
+  enum {
+        ...
+        NITEM = 10000,            /* 트리 원소 개수 */
+  };
+
+  /* make_testtree: NITEM개의 임의의 원소를 갖는 트리를 만들어 돌려주고,
+     마지막으로 만들어진 이름을 endname에 담는다. */
+  Nameval *make_testtree(char **endname)
+  {
+    static Nameval *treep = NULL;
+    static char *end = NULL;
+    if (treep == NULL) {
+      char *name;
+      printf("Generating tree...");
+      for (int i = 0; i < NITEM; i++) {
+        name = random_name();
+        treep = insert(treep, newitem(name, i));
+      }
+      end = name;
+      printf("Done.\n");
+    }
+    ,*endname = end;
+    return treep;
+  }
+#+END_SRC
+
+*테스트 코드*
+
+=get_elapsed= 에 넣을 함수들을 만든다. =get_elapsed= 에 제공하는
+함수는 오직 =void*= 하나만을 받기 때문에, 이를 활용할 수 있도록
+작성해야 한다.
+
+#+BEGIN_SRC c
+  /* 성능 테스트용 lookup 함수 래퍼 */
+  void wrap_lookup(void *arg)
+  {
+    Nameval *treep = ((Nameval**)arg)[0];
+    char    *name  = (char*)(((Nameval**)arg)[1]);
+    Nameval *x;
+    printf("finding %s... ", name);
+    x = lookup(treep, name);
+    if (x && strcmp(x->name, name) == 0)
+      printf("GOOD\n");
+    else
+      printf("BAD\n");
+  }
+
+  /* 성능 테스트용 nrlookup 함수 래퍼 */
+  void wrap_nrlookup(void *arg)
+  {
+    Nameval *treep = ((Nameval**)arg)[0];
+    char    *name  = (char*)(((Nameval**)arg)[1]);
+    Nameval *x;
+    printf("finding %s... ", name);
+    x = nrlookup(treep, name);
+    if (x && strcmp(x->name, name) == 0)
+      printf("GOOD\n");
+    else
+      printf("BAD\n");
+  }
+#+END_SRC
+
+이 함수들을 이용해, 성능 테스트를 하는 함수를 만든다. =lookup= 과
+=nrlookup= 탐색 시간을 출력하여 비교할 수 있도록 한다.
+
+#+BEGIN_SRC c
+  void test_lookupfns()
+  {
+    srand(time(NULL));
+    char    *name;
+    Nameval *testp  = make_testtree(&name);
+    Nameval *arg[2] = {testp, (Nameval *)name};
+    double  elapsed = get_elapsed(&wrap_lookup, arg);
+    printf("lookup   :: elapsed: %f ms.\n", elapsed);
+    elapsed = get_elapsed(&wrap_nrlookup, arg);
+    printf("nrlookup :: elapsed: %f ms.\n", elapsed);
+  }
+#+END_SRC
+
+*수행 결과*
+
+성능 차이가 눈에 띄도록, NITEMS의 값을 1000000(백만)으로 지정했다.
+
+| 시도 | lookup(ms) | nrlookup(ms) |
+| 1차  |      0.005 |        0.003 |
+| 2차  |      0.004 |        0.002 |
+| 3차  |      0.005 |        0.002 |
+| 4차  |      0.005 |        0.003 |
+| 5차  |      0.004 |        0.002 |
+| 평균 |     0.0046 |       0.0024 |
+
+재귀로 구현한 경우 2배 정도의 시간이 더 소요되었다.
+
+1억개로 실험해보려 하였으나, 실험 데이터를 저장하는 데 대략
+2~3기가바이트가 소모되는 것으로 계산되어 포기하였다.
+
+*** 연습 2-12.
+
+중위 순회를 이용하여 정렬 루틴을 만들어 보라. 이 루틴을 실행하는 데
+걸리는 시간은 어느 정도인가? 또, 어떤 상황에서 이 루틴의 작동 속도가
+느려질까? 앞에서 만든 퀵소트와 라이브러리가 제공하는 퀵소트와 비교하면
+이 루틴의 성능은 어느정도인가?
+
+*전달 함수*
+
+2.6절에서 만든 =addname= 을 이용하여 아주 간단하게 만들 수 있다.
+그러면 전역변수 =nvp= 에 정렬된 상태로 저장된다.
+
+#+BEGIN_SRC c
+  void store_to(Nameval *v, void *arg)
+  {
+    addname(v);
+  }
+  ...
+  applyinorder(treep, &store_to, NULL);
+#+END_SRC
+
+*설명*
+
+이 코드를 직접 실행해보지는 않았으나, 시간 복잡도는 트리로 데이터를
+삽입하는 데 $O(n log(n))$, 중위 순회로 정렬하는 데 $O(n)$ 이므로,
+전체적인 시간 복잡도는 $O(n log(n))$ 이 된다. 이진 탐색 트리의 약점은
+편향 트리가 되는 경우이다. 이 경우, 트리의 균형이 깨져 모든 접근이
+선형 탐색과 비슷한 수준이 된다. 정렬과 저장을 함께 수행하므로,
+아무래도 퀵소트보다는 느리다. 또한 포인터를 통해 간접 접근하므로
+배열로 임의접근하는 것보다는 (약간 더) 시간이 걸릴 것이다.
+
+*** 연습 2-13.
+
+트리 연산들이 제대로 수행되는지 검증하기 위한 테스트 집합을 연구하고
+만들어보라.
+
+*유틸리티 함수*
+
+단정문을 이용한다. 그리고 두 노드가 같다는 것을 단정하는
+assert_nvequal 매크로를 만든다.
+
+#+BEGIN_SRC c
+  #include <assert.h>             /* assert */
+
+  #define assert_nvequal(X, Y) {                  \
+    if ((X) != NULL && (Y) == NULL ||             \
+	(X) == NULL && (Y) != NULL ) {            \
+      assert( (X) == (Y) );                       \
+    } else if ((X) != (Y)) {                      \
+      assert(strcmp((X)->name, (Y)->name) == 0);  \
+      assert( (X)->value == (Y)->value );         \
+      assert( (X)->left  == (Y)->left  );         \
+      assert( (X)->right == (Y)->right );         \
+    }                                             \
+  }
+#+END_SRC
+
+트리 노드를 만드는데 연습 2-11에서 구현한 =newitem= 함수를 사용한다.
+
+#+BEGIN_SRC c
+  /* newitem: 새로운 Nameval 노드를 만듬 */
+  Nameval *newitem(char *name, int value)
+  {
+    Nameval *x = (Nameval *)malloc(sizeof(Nameval));
+    x->name = name;
+    x->value = value;
+    x->left = NULL;
+    x->right = NULL;
+    return x;
+  }
+#+END_SRC
+
+부작용없는 순수함수이다.
+
+*삽입 테스트*
+
+다섯가지 테스트 케이스를 구성한다.
+
+1. 빈 트리에 삽입
+2. 트리의 빈 왼쪽 트리에 삽입
+3. 트리의 빈 오른쪽 트리에 삽입
+4. 왼쪽 트리의 빈 오른쪽 링크에 삽입
+5. 중복된 원소 삽입
+
+#+BEGIN_SRC c
+  /* 빈 트리에 삽입하는 경우 */
+  void test_insert_1()
+  {
+    Nameval *treep = NULL;
+    Nameval *head = newitem("5", 5);
+    treep = insert(treep, head);
+    assert_nvequal(head, treep);
+  }
+
+
+  /* 트리의 빈 왼쪽 트리에 삽입하는 경우 */
+  void test_insert_2()
+  {
+    Nameval *treep = NULL;
+    treep = insert(treep, newitem("5", 5));
+    Nameval *lnode = newitem("4", 5);
+    treep = insert(treep, lnode);
+    assert_nvequal(treep->left, lnode);
+  }
+
+  /* 트리의 빈 오른쪽 트리에 삽입하는 경우 */
+  void test_insert_3()
+  {
+    Nameval *treep = NULL;
+    treep = insert(treep, newitem("5", 5));
+    Nameval *rnode = newitem("6", 6);
+    treep = insert(treep, rnode);
+    assert_nvequal(treep->right, rnode);
+  }
+
+  /* 왼쪽 자식 트리의 빈 오른쪽 링크에 삽입하는 경우 */
+  void test_insert_4()
+  {
+    Nameval *treep = NULL;
+    treep = insert(treep, newitem("5", 5));
+    treep = insert(treep, newitem("3", 3));
+    Nameval *lrnode = newitem("4", 4);
+    treep = insert(treep, lrnode);
+    assert_nvequal(treep->left->right, lrnode);
+  }
+
+  /* 중복된 원소 삽입: 단정문으로 확인할 수 없음! */
+  void test_insert_5()
+  {
+    Nameval *treep = NULL;
+    treep = insert(treep, newitem("5", 5));
+    treep = insert(treep, newitem("5", 5)); /* err1 */
+    treep = insert(treep, newitem("3", 3));
+    treep = insert(treep, newitem("3", 3)); /* err2 */
+  }
+
+  /* test_insert: 삽입 테스트 */
+  void test_insert()
+  {
+    test_insert_1();
+    test_insert_2();
+    test_insert_3();
+    test_insert_4();
+    test_insert_5();
+  }
+#+END_SRC
+
+*수행결과*
+
+성공적으로 테스트를 마쳤다.
+
+*탐색 테스트*
+
+세가지 경우로 나누어 테스트한다.
+
+1. 루트 노드의 원소를 찾는 경우
+2. 일반적인 탐색
+3. 없는 노드를 찾는 경우
+
+#+BEGIN_SRC c
+  /* 루트 노드의 원소를 찾는 경우 */
+  void test_lookup_1()
+  {
+    Nameval *treep = NULL;
+    Nameval *root = newitem("5", 5);
+    treep = insert(treep, root);
+
+    Nameval *search;
+    search = lookup(treep, "5");
+    assert_nvequal(search, root);
+  }
+
+  /* 일반적인 탐색 */
+  void test_lookup_2()
+  {
+    Nameval *treep = NULL;
+    treep = insert(treep, newitem("5", 5));
+    treep = insert(treep, newitem("3", 3));
+    treep = insert(treep, newitem("4", 4));
+    treep = insert(treep, newitem("2", 2));
+    Nameval *target = newitem("6", 6);
+    treep = insert(treep, target);
+    treep = insert(treep, newitem("9", 9));
+    treep = insert(treep, newitem("7", 7));
+    treep = insert(treep, newitem("8", 8));
+    Nameval *search;
+    search = lookup(treep, "6");
+    assert_nvequal(search, target);
+  }
+
+  /* 없는 원소 탐색 */
+  void test_lookup_3()
+  {
+    Nameval *treep = NULL;
+    treep = insert(treep, newitem("5", 5));
+    treep = insert(treep, newitem("3", 3));
+    treep = insert(treep, newitem("4", 4));
+    treep = insert(treep, newitem("2", 2));
+    treep = insert(treep, newitem("6", 6));
+    treep = insert(treep, newitem("9", 9));
+    treep = insert(treep, newitem("7", 7));
+    treep = insert(treep, newitem("8", 8));
+    Nameval *search;
+    search = lookup(treep, "1");
+    assert_nvequal(search, (Nameval*)NULL);
+  }
+
+  /* test_lookup: 탐색 테스트 */
+  void test_lookup()
+  {
+    test_lookup_1();
+    test_lookup_2();
+    test_lookup_3();
+  }
+#+END_SRC
+
+*수행결과*
+
+성공적으로 테스트를 마쳤다.
+
+** 해시 테이블
+
+해시 테이블의 쓰임
+
+- 컴파일러 :: 프로그램 내의 변수들에 대한 정보 관리
+- 웹 브라우저 :: 최근 방문한 페이지를 기억하기 위해
+- 인터넷 연결 :: 최근 접속한 도메인 주소, IP 주소를 캐싱
+
+해시테이블은 기본적으로 리스트의 배열이다. (체이닝) 따라서 원소의
+데이터 타입은 리스트이다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char    *name;
+    int     value;
+    Nameval *next;             /* 체인의 다음 노드 */
+  };
+
+  Nameval *symtab[NHASH];      /* 심볼 테이블 */
+#+END_SRC
+
+체인을 관리할 때는 2.7절에서 다룬 리스트 관련 연산들을 쓰면 쉽다. 해시
+테이블용 lookup/insert 루틴을 구현한다.
+
+#+BEGIN_SRC c
+  /* lookup: symtab에서 name을 검색, 필요한 경우 추가 */
+  Nameval *lookup(char *name, int create, int value)
+  {
+    int h;
+    Nameval *sym;
+
+    h = hash(name);
+    for (sym = symtab[h]; sym != NULL; sym = sym->next)
+      if (strcmp(name, sym->name) == 0)
+        return sym;
+    if (create) {
+      sym = (Nameval *) emalloc(sizeof(Nameval));
+      sym->name = name;
+      sym->value = value;
+      sym->next = symtab[h];
+      symtab[h] = sym;
+    }
+    return sym;
+  }
+#+END_SRC
+
+lookup과 insert를 함께 하면 좋은 점은 성능면에서 나타난다. 만약
+lookup과 insert를 따로 해야 한다면 다음과 같은 코드 패턴이 나타날
+것이다.
+
+#+BEGIN_SRC c
+  if (lookup("name") == NULL)
+    additem(newitem("name", value));
+#+END_SRC
+
+위 코드는 해시를 두번 계산하므로 시간이 낭비된다.
+
+해시함수를 구현한다. 이 함수는 결정적(같은 입력을 넣으면 항상 같은
+결과가 나옴)이어야 하고, 빠르고, 배열 전체에 데이터를 균일하게 분산할
+수 있어야 한다. 다음은 자주 쓰이는 문자열 해시 알고리즘이다. "곱셈을
+통해서 새로 들어오는 바이트의 비트들이 지금까지 만들어진 값 전체에
+걸쳐 흩뿌려진다."
+
+#+BEGIN_SRC c
+  enum { MULTIPLIER = 31 };
+
+  /* hash: 문자열 해시를 계산 */
+  unsigned int hash(char *str)
+  {
+    unsigned int h;
+    unsigned char *p;
+
+    h = 0;
+    for (p = (unsigned char *)str; *p != '\0'; p++)
+      h = MULTIPLIER * h + *p;
+    return h % NHASH;
+  }
+#+END_SRC
+
+알려진 사실에 따르면, MULTIPLIER은 31이거나 37일 때 ASCII 문자열의
+해시에 적당하다고 한다. 해시함수가 키 값을 골고루 분산해준다면, 배열의
+정확한 크기는 문제가 되지 않는다.
+
+해시테이블로 쓸 배열의 크기를 소수로 만드는 것이 좋은데, 그렇게
+함으로써 배열의 크기, 해시 함수에서 곱하는 수치, 입력 데이터 사이의
+공통인수가 존재하기 어려워지므로 좀 더 골고루 분포하게 된다.
+
+*해시의 응용*
+
+- 물리 시뮬레이션에서 입자들을 삼차원 배열에 분포시키는 대신, 해시를
+  통해 일차원 해시테이블에 저장하여 공간을 절약할 수 있다.
+- 제러드 홀츠먼(Gerard Holzmann)의 Supertrace 프로그램은 분석 시스템의
+  상태에 따른 정보로 해시값을 계산하고 이 해시 값을 인덱스로 한 비트에
+  정보를 저장한다. 인덱스가 비트이기 때문에 체인이 없고 충돌할 경우
+  다른 입력이라고 나타낼 방법이 없다. 하지만 CRC 해시를 통해 입력을
+  빈틈없이 섞어 해시를 만들며, 메가바이트 단위의 테이블을 사용하기
+  때문에 크게 문제되지 않는다.
+
+** 연습
+
+*** 연습 2-14.
+
+앞에서 만든 해시 함수는 문자열용으로 매우 훌륭한 해시함수다. 그러나
+일부러 나쁜 데이터를 준다면 좋지 않은 결과를 만들어 낼 수도 있다. 이런
+결과를 만들어내는 데이터 집합을 하나 만들어 보라. 또 NHASH의 값이 바뀔
+경우 그때마다 나쁜 데이터 집합을 만드는 것이 쉬워지는지 알아보라.
+
+*포기*
+
+어떻게 푸는지 모르겠다...
+
+아래는 tpop-answer의 내용을 발췌한 것이다.
+
+#+BEGIN_QUOTE
+For NHASH = 127, all these strings hash to 100: "d", "d0", "d00",
+"d000", "d0000", "d00000", "d00000r" and all these hash to 103: "g",
+"gU", "gUU", "gUUU", "gUUUU", "gUUUUU", "gUUUUU(", "gUUUUU(x",
+"gUUUUU(x)" These strings are built up incrementally, at each step
+figuring what the next character must be to keep the hash value the
+same. The sudden change from the repeated characters is what happens
+when the hash counter overflows an unsigned int. See
+trivial_collisions in hash.c.
+
+If NHASH is 31, the hash function degenerates into the hash of the
+final character: hash("a") = hash("cba") = hash("hasha"); at least
+until the hash counter overflows an unsigned int. Similarly, if NHASH
+is 62, strings with the same final character will fall into one of
+only two buckets, and so on with integer multiples of MULTIPLIER. This
+means short strings with the same final character are likely to
+collide. See nhash_collisions in hash.c.
+#+END_QUOTE
+
+이어서 nhash_collisions 함수의 주석이다.
+
+#+BEGIN_QUOTE
+nhash_collisions: show the collisions that can occur when the final
+character of strings are fixed and NHASH is a multiple of MULTIPLIER.
+#+END_QUOTE
+
+*** 연습 2-15.
+
+해시 테이블의 아이템들을 하나씩 접근하는 함수를 만들어보라. 정렬된
+순서대로 접근할 필요는 없다.
+
+*답안*
+
+#+BEGIN_SRC c
+  /* applyhash: 해시 테이블의 원소들을 순회하며 fn을 적용한다. */
+  void applyhash(void (*fn)(Nameval*,void*), void *arg)
+  {
+    int i;
+    Nameval *p;
+    for (i = 0; i < NHASH; i++)
+      for (p = symtab[i]; p != NULL; p = p->next)
+        (*fn)(p, arg);
+  }
+#+END_SRC
+
+실제로 돌려보진 않았으나, 이 정도로 충분해 보인다.
+
+*** 연습 2-16.
+
+lookup 함수를 바꿔서 리스트의 평균 길이가 x를 넘을 때마다 배열의
+크기가 자동으로 곱하기 y만큼 커지고 그에 따라 해시 테이블이 다시
+만들어지도록 하라.
+
+*답안*
+
+기존 코드에서, NHASH는 단순히 심볼테이블의 기본 크기 역할만 한다. 이제
+심볼테이블의 크기를 나타내는 것은 =symtab_capa= 이다. =symtab= 변수는
+가변 배열이어야 하므로 포인터로 선언되었고, =hash()= 함수는 더이상
+NHASH에 의존하지 않고 =symtab_capa= 에 의존한다. 이러한 전제 하에,
+다음 코드는 체인의 평균 길이를 계산하고 임계값 x를 넘을 때마다 크기
+비율 y만큼 테이블을 증가시킨다.
+
+#+BEGIN_SRC c
+  Nameval **symtab = NULL;        /* 심볼 테이블(재정의) */
+
+  static const double X = 1.4;    /* 평균 체인 길이 임계값 */
+  static const int    Y = 2;      /* 늘어나는 공간 크기 비율 */
+  static int symtab_nval = 0;
+  static int symtab_capa = NHASH;
+
+  /* lookup: symtab에서 name을 검색, 필요한 경우 추가. 테이블의 공간이
+     부족하다면 크기를 늘린다. */
+  Nameval *lookup(char *name, int create, int value)
+  {
+    int h;
+    Nameval *sym;
+
+    if (symtab == NULL) {
+      realloc_symtab(symtab_capa);
+    } else if ( ((double) symtab_nval / symtab_capa) > X ) {
+      realloc_symtab(symtab_capa*Y);
+    } else {
+      /* do nothing */
+    }
+      
+    h = hash(name);
+    for (sym = symtab[h]; sym != NULL; sym = sym->next)
+      if (strcmp(name, sym->name) == 0)
+        return sym;
+    if (create) {
+      sym = (Nameval *) emalloc(sizeof(Nameval));
+      sym->name = name;
+      sym->value = value;
+      sym->next = symtab[h];
+      symtab[h] = sym;
+      ++symtab_nval;
+    }
+    return sym;
+  }
+
+  /* static_lookup: symtab에서 name을 검색, 필요한 경우 추가. 테이블
+     크기를 변화시키지 않으며, symtab_nval을 증가시키지 않음. */
+  Nameval *static_lookup(char *name, int create, int value)
+  {
+    int h;
+    Nameval *sym;
+
+    h = hash(name);    /* hash는 NHASH 대신 symtab_capa를 참조한다. */
+    for (sym = symtab[h]; sym != NULL; sym = sym->next)
+      if (strcmp(name, sym->name) == 0)
+        return sym;
+    if (create) {
+      sym = (Nameval *) emalloc(sizeof(Nameval));
+      sym->name = name;
+      sym->value = value;
+      sym->next = symtab[h];
+      symtab[h] = sym;
+    }
+    return sym;
+  }
+
+  /* realloc_symtab: symtab의 크기를 size로 재할당 */
+  void realloc_symtab(int size)
+  {
+    Nameval **oldtab, *p;
+    int nbyte, oldbyte, i;
+    oldtab = symtab;
+    oldbyte = symtab_capa*sizeof(Nameval);  
+    nbyte = size*sizeof(Nameval*);
+    symtab = (Nameval**) emalloc(nbyte);
+    memset(symtab, 0, nbyte);
+  
+    if (symtab == NULL)
+      return;
+
+    for (i = 0; i < symtab_capa, i++)
+      for (p = oldtab[0]; p != NULL; p = p->next)
+        static_lookup(p->name, 1, p->value);
+  
+    symtab_capa = size;
+    free(oldtab);
+  }
+#+END_SRC
+
+*** 연습 2-17.
+
+2차원 좌표를 저장하는 목적으로 쓸 해시 함수를 만들어보라. 좌표의
+종류가 바뀔 때, 예를 들어 정수에서 부동소수점 수로 바뀌거나, 데카르트
+좌표에서 극좌표로 바뀌거나, 차원이 2차원에서 더 높은 차원으로 바뀔 때
+해시 함수를 어떤 식으로 고쳐야 하는가?
+
+*포기*
+
+너무 어려운데
+
+다음은 tpop-answer에서 발췌한 내용이다.
+
+#+BEGIN_QUOTE
+See hash-point.c. hash_point is the function that hashes a 2D
+cartesian integer point, and the other hash functions are variations
+on it. I treat the vector of coordinates in a point as a little string
+and use the same hash function from earlier. It generalizes easily to
+higher dimensions. The output appears a little less uniform when
+hashing polar coordinates of regularly spaced cartesian points. (A
+consideration with polar coordinates is whether different
+representations of the same point, like (1, 0) and (1, 2 * pi), should
+hash to the same value. I have not attempted to make such points hash
+to the same value.) This hash scheme works fine for floating-point
+coordinates until the points get too close together and overwhelm the
+ability of the multiplier to dissipate them.
+#+END_QUOTE
+
+중요한 부분은, 극 좌표게라면 (r, theta) = (1, 0)과 (1, 2*pi) 가 동일한
+값이 되도록 해야한다는 점인 것 같다. 문제가 굉장히 수준높다.
+
+
+*변명*
+
+원한다면 해시 함수에 대한 리서치를 해보라는 것이 저자의 의도인 듯
+하다. 이 책은 수학적인 깊이가 요구되는 설명은 되도록 자제하고
+있다. 그러므로 수학적인 어려움이 있는 문제는 적당히 넘어가도 괜찮을 것
+같다. 물론 *원한다면,* 더 리서치해볼 수 있지만 나는 넘긴다.
+
+2챕터의 *더 읽어보기* 섹션에 "[Algorithms in C++]의 3판(1998)은 해시
+함수와 테이블 크기에 대해 자세하게 다룬다" 라는 말이 있는 것을 보면,
+저자가 참고 자료들을 보다가 저자 나름대로 재밌다고 생각하여 넣은
+내용인 것 같다. 덕분에, 많은 시간을 좌절하였다.
+
+** 셀프 연습
+
+한 프로그래밍 관련 커뮤니티에서, 간단한 문제를 발견했다. 문제는 이렇다.
+
+#+BEGIN_EXAMPLE
+aaa01
+aaa02
+aaa04
+aaa07
+tdd02
+tdd06
+bdc00
+cgg01
+cgg02
+#+END_EXAMPLE
+
+이와 같이 주어지는 입력을
+
+#+BEGIN_EXAMPLE
+[
+    {
+        id: 'aaa',
+        sequence: '01', '02', '04', '07'
+    },
+    {
+        id: 'tdd',
+        sequence: '02', '06'
+    },
+    {
+        id: 'bdc',
+        sequence: '00'
+    },
+    {
+        id: 'cgg',
+        sequence: '01', '02'
+    }
+]
+#+END_EXAMPLE
+
+이와 같은 형태로 변환하여 출력하는 문제이다.
+
+*자료구조 선택*
+
+크게 복잡한 구조가 아니기 때문에, 다양한 형태의 자료구조를 선택할 수
+있다. 문제에 명확히 명시된 것은 아니지만, 입력 순서의 유지가 중요한 것
+같다. 그렇다면 해시 테이블은 아쉽게도 쓸 수 없다. 배열이나 리스트를
+선택하는 것으로 충분하다. 나는 =sequence= 들을 리스트로 표현하고, =id,
+sequence= 쌍을 원소로 갖는 배열을 사용하기로 하였다.
+
+*Sequence 리스트*
+
+각 =id= 별  =sequence= 를 기록할 =Sequence= 데이터 타입을 정의한다.
+
+#+BEGIN_SRC c
+  typedef struct Sequence Sequence;
+  struct Sequence {
+    char *data;
+    Sequence *next;
+  };
+
+  /* add_seq: seq의 뒤에 원소를 하나 추가함(O(n)) */
+  Sequence *add_seq(Sequence *seq, char *data)
+  {
+    Sequence *newp;
+    newp = (Sequence*)malloc(sizeof(Sequence));
+    newp->data = data;
+    newp->next = NULL;
+  
+    if (seq == NULL)
+      return newp;
+
+    Sequence *p;
+    for (p = seq; p->next != NULL; p = p->next)
+      ;
+    p->next = newp;
+    return seq;
+  }
+#+END_SRC
+
+가장 기본적인 연산으로 리스트 뒤에 원소를 추가하는 =add_seq= 를
+구현하였다.
+
+*id, sequence 쌍*
+
+=id= 와 =sequence= 쌍을 담는 데이터타입 =Nameval= 을 정의한다.
+
+#+BEGIN_SRC c
+  typedef struct Nameval Nameval;
+  struct Nameval {
+    char *name;
+    Sequence *seq;
+  };
+
+  /* new_nameval: 새 Nameval 개체를 만듬 */
+  Nameval *new_nameval(char *name)
+  {
+    Nameval *newp;
+    newp = (Nameval*)malloc(sizeof(Nameval));
+    newp->name = name;
+    newp->seq = NULL;
+    return newp;
+  }
+#+END_SRC
+
+*Nameval 배열*
+
+여러개의 =Nameval= 개체를 담을 수 있는 =nametab= 전역 배열을
+사용한다. 정적 배열이다.
+
+#+BEGIN_SRC c
+  enum {
+        TABSIZ = 1024,   /* nametab 크기 */
+  };
+  Nameval *nametab[TABSIZ];
+  int nval = 0;
+#+END_SRC
+
+그리고 =nametab= 을 관리하는 연산을 만든다.
+
+#+BEGIN_SRC c
+  /* additem: nametab의 name에 val 추가 */
+  int additem(char *name, char *val)
+  {
+    for (int i = 0; i < nval; i++) {
+      if (strcmp(name, nametab[i]->name) == 0) {
+        nametab[i]->seq =
+          add_seq(nametab[i]->seq, val);
+        return i;
+      }
+    }
+    if (nval+1 < TABSIZ) {
+      nametab[nval] = new_nameval(name);
+      nametab[nval]->seq =
+        add_seq(nametab[nval]->seq, val);
+      ++nval;
+      return nval-1;
+    } else {
+      fprintf(stderr, "nametab이 꽉 찼습니다.");
+      return -1;
+    }
+  }
+#+END_SRC
+
+*입력과 출력*
+
+내부 자료 구조를 모두 정리하였으니, 이제 프로그램의 입력과 출력에
+관련된 연산을 구현한다. 우선 =aaaNN= 꼴의 입력값을 분해하여 =aaa= 꼴의
+id와 =NN= 꼴로 분리하는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* parse_string: aaaNN 꼴 문자열을 분리 */
+  void parse_string(char *s, char **pname, char **pval)
+  {
+    int i;
+    /* id부분의 길이를 구해서 i라고 둔다. */
+    for (i = 0; s[i] != '\0'; i++)
+      if (isdigit(s[i]))
+        break;
+    char *name = (char*)malloc((i+1)*sizeof(s[0]));
+    strncpy(name, s, i);
+    name[i] = '\0';
+
+    int vlen = strlen(s+i);
+    char *value = (char*)malloc((vlen+1)*sizeof(s[0]));
+    value = strncpy(value, s+i, vlen);
+    value[vlen] = '\0';
+  
+    ,*pname = name;
+    ,*pval  = value;
+  }
+#+END_SRC
+
+그리고 =nametab= 배열에 담긴 데이터를 json 형태로 출력하는 =dump=
+함수를 만든다. 인자로 파일스트림을 받는 것에 주목하라. 표준 출력으로
+출력할 수도 있지만, 파일로도 덤프할 수 있다.
+
+#+BEGIN_SRC c
+  /* dump: nametab을 json 형태로 출력 */
+  void dump(FILE *out)
+  {
+    fputs("[\n", out);
+    for (int i = 0; i < nval; i++) {
+      Sequence *p;
+      fprintf(out, "    {\n        id: '%s',\n        sequence:",
+              nametab[i]->name);
+      for (p = nametab[i]->seq; p != NULL; p = p->next) {
+        fprintf(out, " '%s'%c",
+                p->data, (p->next ? ',' : '\n'));
+      }
+      fprintf(out, "    }%s\n",
+              (i == nval-1 ? "" : ","));
+    }
+    fputs("]\n", out);
+  }
+#+END_SRC
+
+*메인 함수*
+
+재료는 모두 갖추었으니, 이제 모든 블록을 조립하기만 하면 된다.
+
+#+BEGIN_SRC c
+  #ifndef BUFSIZ
+    #define BUFSIZ 512
+  #endif
+
+  int main(void)
+  {
+    char buf[BUFSIZ];
+    while (scanf("%s", buf) == 1) {
+      char *name, *val;
+      parse_string(buf, &name, &val);
+      additem(name, val);    
+    }
+    dump(stdout);
+    /* 해제는 시스템에 맡긴다. */
+    return 0;
+  }
+#+END_SRC
+
+*자료구조를 변경하기*
+
+나는 LISP를 사용하던 습관 탓에 리스트에 좀 더 익숙하여 리스트를 구현해
+Sequence를 썼지만, 만들면서 곧 뭔가 잘못되었다는 것을
+알게되었다. 순서를 유지하기 위해서는 리스트의 맨 뒤에 아이템을
+추가해야 하는데 리스트는 여기에 필요한 시간적 비용이 크기
+때문이다. 자료구조를 바꾸는 것은 물론 어려운 일은 아니다. =Sequence=
+가 가변 배열이 되도록 재정의하자.
+
+#+BEGIN_SRC c
+  typedef struct Sequence Sequence;
+  struct Sequence {
+    char **data;      /* array of strings */
+    int nval;
+    int capa;
+  };
+
+  enum {
+    DEFAULT_CAPA = 1,         /* Sequence 기본 크기 */
+    INCREASE_FAC = 2,         /* Sequence 크기 증가 배수 */
+  };
+
+  /* add_seq: seq의 뒤에 원소를 하나 추가함(O(1)) */
+  Sequence *add_seq(Sequence *seq, char *data)
+  {
+    /* 빈 시퀀스일때 새로 만듬 */
+    if (seq == NULL) {
+      Sequence *newp;
+      newp = (Sequence*)malloc(sizeof(Sequence));
+      newp->nval = 0;
+      newp->capa = DEFAULT_CAPA;
+      newp->data = (char**)malloc(newp->capa *
+                                  (sizeof(char*)));
+      seq = newp;
+    }
+    /* 가득 찬 경우 INCREASE_FAC 배로 늘림 */
+    if (seq->nval+1 == seq->capa) {
+      char **newdata;
+      seq->capa *= INCREASE_FAC;
+      newdata = (char**)realloc(seq->data, seq->capa *
+                                (sizeof(char*)));
+      if (newdata == NULL) {
+        perror("add_seq");
+        exit(1);
+      }
+      seq->data = newdata;
+    }
+  
+    seq->data[seq->nval++] = data;
+    return seq;
+  }
+#+END_SRC
+
+=Sequence= 의 데이터를 수정하기 위해서는 항상 =add_seq= 함수를
+이용하기 때문에, 나머지 코드의 대부분은 수정할 필요가 없다. 그러나
+그렇지 않은 부분이 딱 한 곳 있는데, =dump= 에서 시퀀스의 자료를
+순회하기 위해 리스트 구현을 이용한다. 이 부분을 수정해주자.
+
+#+BEGIN_SRC c
+  /* dump: nametab을 json 형태로 출력 */
+  void dump(FILE *out)
+  {
+    fputs("[\n", out);
+    for (int i = 0; i < nval; i++) {
+      fprintf(out, "    {\n        id: '%s',\n        sequence:",
+              nametab[i]->name);
+      int seqsz = nametab[i]->seq->nval;
+      char **data = nametab[i]->seq->data;
+      for (int j = 0; j < seqsz; j++) {
+        fprintf(out, " '%s'%c", data[j],
+                (j+1 == seqsz ? '\n' : ','));
+      }
+      fprintf(out, "    }%s\n",
+              (i+1 == nval ? "" : ","));
+    }
+    fputs("]\n", out);
+  }
+#+END_SRC
+
+만약 C++이나 자바라면 이터레이터 패턴을 이용하여 내부 자료구조가
+변경되어도 인터페이스는 일관성을 유지할 수 있을 것이다. 그러나 C에서는
+이터레이터를 구현하려면 새로운 타입을 도입하고 함수를 만들어야 하기
+때문에 이래저래 할 일이 많다.
+
+C에서 할 수 있는 최선으로는 책에서 나온 것과 같이 자료들을 순회하는
+=apply= 함수를 만드는것인데, =dump= 함수에서는 자료의 끝을 확인할 수
+있어야 하기 때문에 여기서는 그다지 유용하지 않다.
+
+*수행 결과*
+
+#+BEGIN_EXAMPLE
+CMD> type testfile.txt
+aaa01
+aaa02
+aaa04
+aaa07
+tdd02
+tdd06
+bdc00
+cgg01
+cgg02
+
+CMD> test.exe < testfile.txt
+[
+    {
+        id: 'aaa',
+        sequence: '01', '02', '04', '07'
+    },
+    {
+        id: 'tdd',
+        sequence: '02', '06'
+    },
+    {
+        id: 'bdc',
+        sequence: '00'
+    },
+    {
+        id: 'cgg',
+        sequence: '01', '02'
+    }
+]
+#+END_EXAMPLE
+
+* 설계와 구현
+
+** 소개
+
+- 브룩스(맨먼스 미신)에 따르면, 프로그램을 만들 때 가장 중요한 것은
+  구조의 설계이다. 데이터 구조를 만들었다면, 알고리즘은 보통 바로
+  결정할 수 있고, 그에 따른 코딩도 비교적 쉽다.
+- 전체 설계 차원과 비교할 때 프로그래밍 언어의 선택은 상대적으로
+  중요하지 않다... (중략) ...사용하는 언어에 프로그램 설계가 영향을
+  받기는 하지만, 그 영향이 지배적일 정도는 아니다.
+
+*** 그럴듯한 영어 문장을 출력하기
+
+알파벳과 공백을 포함한 문장을 아무렇게나 만들어낸다면:
+
+xptmxgn xusaja afqnzgxl lhidlwcd rjdjuvpydrlwnjy
+
+
+철자가 나타나는 빈도를 고려하여 글자를 출력한다면:
+
+idtefoae tcs trder jcii ofdslnqetacp t ola
+
+사전에서 아무렇게나 단어를 선택해서 출력한다면:
+
+polydactyl equatorial splashily jowl verandah circumscribe
+
+더 나은 결과를 얻으려면 구조화된 통계 모델이 필요하다.
+
+** 마르코프 체인 알고리즘
+
+*** Glossary
+
+- 단어 :: 글에서 공백으로 구분된 문자열이다. 문장부호를 제외하지
+        않는다. 예를 들어, 'words' 와 'words.'는 다른 단어이다.
+- 어구 :: 글에서 연속된 몇 단어의 묶음이다. 글을 한 번 분석할 때
+        어구의 길이는 일정해야 한다. 예를 들어, '맨먼스미신은
+        고전이라고 부를 만한 브룩스의 책이다'라는 문장을 3단어 어구로
+        분석한다고 하면, '맨먼스미신은 고전이라고 부를', '고전이라고
+        부를 만한', '부를 만한 브룩스의', '만한 브룩스의 책이다'로
+        네개의 어구를 만들 수 있다.
+- 접미어(suffix) :: 한 어구에서 마지막 단어를 말한다.
+- 접두어(prefix) :: 한 어구에서 접미어를 제외한 나머지 단어이다.
+- 상태(state) :: 한 접두어와 그에 딸린 여러 접미어
+
+*** 의사 코드
+
+아래 의사코드는 3단어 어구로 그럴듯한 문장을 만들어내는 마르코프 체인
+알고리즘을 표현한 것이다.
+
+#+BEGIN_EXAMPLE
+  원본 글의 첫 두 단어를 w1과 w2라 하자.
+  w1과 w2를 출력한다.
+  반복:
+      글에서 w1와 w2를 접두어로 갖는 접미어들 가운데 임의로 w3를 선택한다.
+      w3을 출력한다.
+      (w1, w2) := (w2, w3)
+#+END_EXAMPLE
+
+** 데이터 구조 후보들
+
+*** 성능 요구사항
+
+- 책 한 권 분량을 처리할 수 있어야 한다.
+- 출력은 수백 혹은 수천 개 단어가 될 것이다.
+- 몇 초 수준에서 프로그램 실행이 끝나야 한다.
+
+*** 데이터 구조 결정
+
+*상태 목록에 대하여*
+
+접두어를 키로 갖고, 접미어들의 목록을 값으로 갖는 해시 테이블을
+만든다.
+
+*단어에 대하여*
+
+두가지 방법이 있다.
+
+1. 각 단어를 독립된 문자열로 저장
+2. 단어 중복을 제거하기 위해 (단어, 주소값)의 해시 테이블을 만들고,
+   글을 주소값의 배열로 만든다.
+
+2번 방법은 비교 검사가 수월하고 공간을 아낄 수 있다. 그러나 구현이
+어려운 단점이 있다. 책에서는 1번 방법으로 구현한다.
+
+** C에서 데이터 구조를 만들기
+
+해시테이블에서 쓰일 상수들을 정의한다.
+
+#+BEGIN_SRC c
+  enum {
+      NPREF = 2,         /* 접두사의 단어 수 */
+      NHASH = 4093,      /* 상태를 저장할 해시 테이블 크기 */
+      MAXGEN = 10000,    /* 생성할 수 있는 최대 단어 수 */
+  };
+#+END_SRC
+
+책 한 권 분량의 입력을 가정하였기 때문에, 해시 테이블의 크기는 충분히
+크게 잡는다. 만약 평균 3개 중복을 가정하면 약 12000개의 접두어를 담을
+수 있다. 일반적으로 한권의 책이 15만자정도 된다는 사실을 감안하면,
+충분한 수치이다.
+
+접두어는 단어의 배열로 정의한다. 접두어(=pref=)와 접미어(=suf=)를
+멤버로 갖는 State 타입을 정의하자.
+
+#+BEGIN_SRC c
+  typedef struct State State;
+  struct State {
+      char   *pref[NPREF];        /* 접두어 */
+      Suffix *suf;                /* 접미어 목록 */
+      State  *next;               /* 해시테이블 체인 */
+  };
+
+  typedef struct Suffix Suffix;
+  struct Suffix {
+      char   *word;               /* 접미어 */
+      Suffix *next;               /* 다음 접미어 노드 */
+  };
+#+END_SRC
+
+이제 접두사에 쓸 해시 함수를 만든다.
+
+#+BEGIN_SRC c
+  unsigned int hash(char *s[NPREF])
+  {
+      unsigned int h;
+      unsigned char *p;
+      int i;
+
+      h = 0;
+      for (i = 0; i < NPREF; i++)
+          for (p = (unsigned char *)s[i]; *p != '\0'; p++)
+              h = MULTIPLIER * h + *p;
+      return h % NHASH;
+  }
+#+END_SRC
+
+비슷한 방식으로 lookup 루틴을 고친다.
+
+#+BEGIN_SRC c
+  /* lookup: statetab에서 접두어를 검색, 필요할 경우 접두어를 생성 */
+  /* 접두어를 찾았거나, 만들었으면 포인터를 리턴. 그외의 경우 NULL */
+  /* 새 State를 만들 때 접두어의 사본을 만들지 않는다는 점에 유의하라. */
+  State *lookup(char *prefix[NPREF], int create)
+  {
+      int i, h;
+      State *sp;
+
+      h = hash(prefix);
+      for (sp = statetab[h]; sp != NULL; sp = sp->next) {
+          for (i = 0; i < NPREF; i++)
+              if (strcmp(prefix[i], sp->pref[i]) != 0)
+                  break;
+          if (i == NPREF)         /* 찾았다면 */
+              return sp;
+      }
+      if (create) {
+          sp = (State *) malloc(sizeof(State));
+          if (!sp) {
+              perror("lookup");
+              exit(1);
+          }
+          
+          for (i = 0; i < NPREF; i++)
+              sp->pref[i] = prefix[i];
+          sp->suf = NULL;
+          sp->next = statetab[h];
+          statetab[h] = sp;
+      }
+      return sp;
+  }
+#+END_SRC
+
+다음으로, 파일 내용을 읽어 해시 테이블을 채우는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* estrdup: 문자열 사본 생성. 실패시 프로그램 종료*/
+  char *estrdup(char *str)
+  {
+      int len = strlen(str);
+      char *cp = malloc((len+1)*sizeof(char));
+      if (!cp) {
+          perror("build");
+          exit(1);
+      }
+      strncpy(cp, str, len);
+      cp[len] = '\0';         
+      return cp;
+  }
+
+  /* build: 입력을 읽고 해시 테이블에 저장 */
+  void build(char *prefix[NPREF], FILE *f)
+  {
+      char buf[100], fmt[10];
+
+      /* 포맷 문자열 작성, %s만 쓸 경우 buf가 오버플로할 가능성이 있음 */
+      sprintf(fmt, "%%%ds", sizeof(buf)-1);
+      while(fscanf(f, fmt, buf) != EOF) {
+          add(prefix, estrdup(buf));
+      }
+  }
+
+  /* add: 단어를 접미어 리스트에 추가하고 접두어를 갱신한다 */
+  void add(char *prefix[NPREF], char *suffix)
+  {
+      State *sp;
+
+      sp = lookup(prefix, 1);     /* 없으면 생성 */
+      addsuffix(sp, suffix);
+      /* 접두사 배열에서 단어들을 하나씩 앞으로 당긴다. */
+      memmove(prefix, prefix+1, (NPREF-1)*sizeof(prefix[0]));
+      prefix[NPREF-1] = suffix;
+  }
+
+  /* addsuffix: Suffix를 state에 추가. 접미사는 주어진 문자열의 사본이
+   ,* 아님에 유의하라. */
+  void addsuffix(State *sp, char *suffix)
+  {
+      Suffix *suf;
+
+      suf = (Suffix *)malloc(sizeof(Suffix));
+      if (!suf) {
+          perror("addsuffix");
+          exit(1);
+      }
+      suf->word = suffix;
+      suf->next = sp->suf;
+      sp->suf = suf;
+  }
+#+END_SRC
+
+
+** 출력 생성하기
+
+*** 경계값 살펴보기
+
+*출력을 끝내는 방법에 관하여*
+
+한 가지 쉬운 방법은 어떤 입력에서도 절대로 등장하지 않는다고 보장하는
+단어 하나를 추가해두고, 이것을 종료 신호처럼 여기면 된다. 해시테이블의
+마지막 접미어로 이 단어를 추가하면 된다. 이것을 보초값(sentinel
+value)이라고 부른다.
+
+#+BEGIN_SRC c
+  /* 단어는 공백을 포함하지 않으므로, 종료 신호로 충분하다. */
+  char NONWORD[] = "\n";
+
+  build(prefix, stdin);
+  add(prefix, NONWORD);
+#+END_SRC
+
+*입력이 충분하지 않을 경우에 관하여*
+
+만약 4단어 어구를 사용하는데 2단어 입력이 들어왔다고 치자. 그렇다면
+입력이 충분하지 않은 것이다. 이런 상황에 대처하는 두 가지 방법이 있다.
+
+1. 입력이 충분하지 않으면 프로그램 종료
+2. 충분한 가짜 입력을 만들어둔다.
+
+이 프로그램은 어떻게든 문장을 만들어 낼 것이므로, 2번 방법이 적당하다.
+
+가짜 입력을 만드는 괜찮은 방법은 가짜 접두어를 채워두는 것이다. 예를
+들어 4단어 어구를 사용해야 하는데 'ab'만이 들어온다고 치자. 가짜
+접두어는 NONWORD로 적당히 채워둔다. 그러면 아래와 같은 State들이
+만들어질 것이다.
+
+#+BEGIN_EXAMPLE
+접두어 -> 접미어
+0 0 0 -> a
+0 0 a -> b
+0 a b -> 0
+종료
+#+END_EXAMPLE
+
+출력할때는? 접두어가 NONWORD라면 그저 출력하지 않으면 그만이다. 즉, 첫
+번째 출력을 생략하는 것이다.
+
+*** 출력 생성 함수
+
+이상의 내용을 바탕으로 적절하게 단어를 출력해주는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* generate: 한 줄에 한 단어씩 출력 생성 */
+  void generate(int nwords)
+  {
+      State *sp;
+      Suffix *suf;
+      char *prefix[NPREF], *w;
+      int i, nmatch;
+
+      for (i = 0; i < NPREF; i++) /* 접두어 초기화 */
+          prefix[i] = NONWORD;
+
+      for (i = 0; i < nwords; i++) {
+          sp = lookup(prefix, 0);
+          nmatch = 0;
+          for (suf = sp->suf; suf != NULL; suf = suf->next)
+              if (rand() % ++nmatch == 0) /* 확률 = 1/nmatch */
+                  w = suf->word;
+          if (strcmp(w, NONWORD) == 0)
+              break;
+          printf("%s\n", w);
+          memmove(prefix, prefix+1, (NPREF-1)*sizeof(prefix[0]));
+          prefix[NPREF-1] = w;
+      }
+  }
+#+END_SRC
+
+최종적으로, 메인 루틴을 만든다.
+
+#+BEGIN_SRC c
+  /* markov main: 마르코프 체인을 이용한 텍스트 생성 */
+  int main(void)
+  {
+      int i, nwords = MAXGEN;
+      char *prefix[NPREF];
+
+      for (i = 0; i < NPREF; i++)
+          prefix[i] = NONWORD;
+      build(prefix, stdin);
+      add(prefix, NONWORD);
+      generate(nwords);
+      return 0;
+  }
+#+END_SRC
+
+** 연습
+
+*** 연습 3-1.
+
+길이를 모르는 리스트에서 임의의 원소를 선택하는 알고리즘은 난수
+생성기가 좋아야 제대로 작동한다. 어떻게 해야 실제로 잘 돌아가는 난수
+생성기를 만들 수 있을지 설계하고 실험해보자.
+
+*포기*
+
+이걸 어케함
+
+*** 연습 3-2.
+
+각 입력 단어를 별도의 해시 테이블에 저장한다면, 단어가 단 한번만
+저장되므로 메모리를 아낄 수 있다. 몇몇 문서를 입력 예로 삼아 얼마나
+아낄 수 있는지 측정해보라. 프로그램을 이런 방식으로 구현하면, 해시
+체인에서 접두사를 찾을 때에도 문자열 비교 대신 포인터 비교만 하면
+되므로, 실행 속도도 훨씬 빨라질 것이다. 이 방식을 써서 프로그램을
+구현해보고 속도와 메모리 소비량에서 얼마나 변화가 있었는지 측정해보라.
+
+*단어 해시셋 생성*
+
+문자열을 위한 해시함수를 정의한다. 기존의 =hash= 함수는 접두어에 대한
+해시함수라는 점을 반영해 =hash_pref= 라는 이름으로 바꾸었다.
+
+#+BEGIN_SRC c
+  static const int MULTIPLIER = 31;
+
+  /* hash: 문자열의 해시값을 생성한다. */
+  unsigned int hash(char *s)
+  {
+      unsigned int h;
+
+      h = 0;
+      for (char *c = s; *c != '\0'; c++)
+          h = MULTIPLIER * h + *c;
+      return h % NHASH;
+  }
+#+END_SRC
+
+해시셋을 위한 자료구조를 만든다. 구조체 형태는 =Suffix= 와 완전히
+동일한 모양새이다.
+
+#+BEGIN_SRC c
+  typedef struct Word Word;
+  /* Word: 단어 해시셋의 원소
+   ,* 링크드리스트의 한 노드이다. */
+  struct Word {
+      char *word;                 /* 노드가 담고있는 단어 */
+      Word *next;                 /* 링크드 리스트의 다음 노드 */
+  };
+
+  /* wordset: 단어들을 유일하게 저장하는 해시셋 */
+  Word *wordset[NHASH];
+#+END_SRC
+
+코드의 양을 줄이기 위해서라면, =Suffix= 구조체 정의를 없애고 =typedef
+struct Word Suffix= 로 고칠 수도 있을 것이다. 그러나 나는 그냥 내버려
+두는 편을 선택했다. 어차피 컴파일 하고나면 타입 정보는 사라지기 때문이다.
+
+*단어세트 탐색 함수*
+
+단어 세트는 말하자면 단어 문자열을 키로 갖고, 그 단어 문자열의
+포인터를 값으로 갖는 해시 테이블로 볼 수 있다. 사실 그 둘은 완전히
+같은 것으로 취급할 수 있기 때문에, =wordset= 에서 문자열을 찾은 뒤 그
+문자열을 그대로 돌려주는 함수를 만들 것이다.
+
+#+BEGIN_SRC c
+  /* getword: wordset으로부터 단어를 가져온다. */
+  char *getword(char *word)
+  {
+      unsigned int h;
+      Word *wp;
+    
+      h = hash(word);
+      for (wp = wordset[h]; wp != NULL; wp = wp->next)
+          if (strcmp(wp->word, word) == 0)
+              return wp->word;
+      // 없다면 새로 만든다.
+      wp = (Word*)emalloc(sizeof(Word));
+      wp->word = estrdup(word);
+      wp->next = wordset[h];
+      wordset[h] = wp;
+      return wp->word;
+  }
+#+END_SRC
+
+=getword= 함수는 두 가지 경우에 따라 다른 행동을 한다.
+
+1. =wordset= 에서 단어를 찾은 경우: 그 단어를 리턴한다.
+2. 찾지 못한 경우: =wordset= 에 새 단어를 추가하고, 그 단어를
+   리턴한다.
+
+*기존 코드에 반영*
+
+우리의 목적은, 단어를 읽어 =statetab= 에 추가할 때, 접두어 및 접미사를
+일일이 복사하지 말고 =wordset= 에서 가져와 포인터만 바꾸어 끼는
+것이다. 이렇게하면 할당/복사의 비용이 줄고 메모리를 아낄거라 기대할 수
+있다. 이런 과정은 =build= 함수에 포함되기 때문에, 이 함수를 고친다.
+
+#+BEGIN_SRC c
+  /* build: 입력을 읽고 해시 테이블에 저장 */
+  void build(char *prefix[NPREF], FILE* f)
+  {
+      char buf[100], fmt[10];
+      /* 포맷 문자열 작성, %s만 쓸 경우 buf가 오버플로우할 가능성이 있음 */
+      sprintf(fmt, "%%%ds", sizeof(buf)-1);
+      while (fscanf(f, fmt, buf) != EOF)
+          add(prefix, estrdup(buf));
+  }
+#+END_SRC
+
+=add= 함수에 =estrdup(buf)= 대신 =getword(buf)= 를 전달한다. 바뀐
+함수는 다음과 같다.
+
+#+BEGIN_SRC c
+  /* build: 입력을 읽고 해시 테이블에 저장 */
+  void build(char *prefix[NPREF], FILE* f)
+  {
+      ...
+      while (fscanf(f, fmt, buf) != EOF)
+          /* getword(buf): 내용이 같은 문자열에 대해 유일한 문자열 포인터가 추가되도록 한다. */
+          add(prefix, getword(buf));
+  }
+#+END_SRC
+
+*수행결과*
+
+150333 바이트 크기, 26325 단어를 가진 입력에 대해 테스트를 수행했다.
+메모리를 할당한 뒤 단 한번도 해제하지 않았으므로, 이런 메모리가 얼마나
+되는지 valgrind HEAP Summary를 통해 확인할 수 있을 것이다.
+
+1. 단어를 해시셋에 저장하지 않은 경우 valgrind 출력:
+   #+BEGIN_EXAMPLE
+     in use at exit: 1,119,453 bytes in 70,037 blocks
+   #+END_EXAMPLE
+2. 단어를 해시셋에 저장한 경우 valgrind 출력:
+   #+BEGIN_EXAMPLE
+     in use at exit: 1,101,480 bytes in 54,246 blocks
+   #+END_EXAMPLE
+
+약 18000 바이트, 약 16000개의 메모리 블록 할당을 절약할 수 있었다.
+
+*** 연습 3-3.
+
+데이터의 시작과 끝에 경계표시인 NONWORD들을 추가하는 문장을 제거하고,
+generate를 고쳐서 경계표시 없이 올바로 시작하고 끝날 수 있게
+구현해보라. 특히 입력의 길이가 0, 1, 2, 3, 4 단어일 때에도 제대로
+동작하도록 만들어라. 그리고 이렇게 만든 코드와 경계표시를 쓴 코드를
+비교해보라.
+
+*대안 탐색*
+
+데이터의 시작에 경계표시를 쓰지 않는 간단하다. 방법은 첫 NPREF 개의
+입력 단어들을 접두어로 쓰는 것이다. 그렇다면 데이터의 끝에 경계표시를
+넣는 것을 대체할 수 있을까?
+
+데이터의 끝 표시는 일반적인 상황이라면 문제가 없지만, 그렇지 않은
+경우가 있다. 당연하게도 일반적인 상황이라면 아무리 끝을 나타내는
+접미어가 없다 하더라도 MAXGEN 만큼만 출력하고 끝날 것이므로 별 문제가
+없을 것이라 기대할 수 있다. 이는 우리가 출력 제어를 위해 이미 구현한
+부분이기도 하다. 그러나 만약 어구를 이루기 위한 단어 수보다 부족한
+단어가 입력된다면 어떻게 할까? 
+
+기존의 코드베이스를 그대로 쓴다면 =add= 함수가 영영 실행되지 않을
+것이므로 해시 테이블에 값이 하나도 없을 것이다. 경계값이 있는 경우와
+똑같은 수행을 하기 위해서는, 이러한 케이스를 따로 빼내어 불충분한
+입력을 그대로 출력한 뒤 즉시 종료하도록 구현해야 한다.
+
+따라서, 우리가 바꿀 동작은 두가지이다. 데이터의 시작을 첫 몇 단어로
+쓰도록 고치고, 데이터가 불충분할 경우 그대로 출력하고 종료한다. 한편,
+기존의 코드에서 NONWORD를 사용하는 부분은 markov main 함수와 generate
+함수이다. 이 함수들을 고쳐 쓸것이다.
+
+*변경된 markov main 함수*
+
+#+BEGIN_SRC c
+  /* markov main: 마르코프 체인을 이용한 텍스트 생성 */
+  int main(void)
+  {
+      int i, j, nwords = MAXGEN;
+      char *prefix[NPREF], *prefix_bak[NPREF];
+      FILE *in;
+      char buf[100], fmt[10];
+
+      in = stdin;
+      /* 초기 값을 첫 NPREF개의 입력으로 한다. */
+      sprintf(fmt, "%%%ds", sizeof(buf)-1);
+      for (i = 0; i < NPREF; i++) {
+          if (scanf(fmt, buf) == EOF)
+              break;
+          prefix[i] = getword(buf);
+      }
+      memcpy(prefix_bak, prefix, sizeof(char*)*NPREF);
+
+      /* 데이터가 적음: i개의 입력이 끝이라면 */
+      if (i < NPREF || scanf(fmt, buf) == EOF) { 
+          for (j = 0; j < i; j++)
+              printf("%s ", prefix[j]);
+      } else {
+          add(prefix, getword(buf)); /* 접미사 추가 */
+          build(prefix, stdin);
+          generate(nwords, prefix_bak);
+      }
+  }
+#+END_SRC
+
+달라진점:
+
+1. 첫 NPREF 개의 입력이 데이터 시작점이 되도록 수정하였다.
+2. NONWORD를 데이터의 끝에 추가하는 부분을 삭제하고, 접미사를
+   추가하도록 하였다.
+3. generate와 공유할 수 있도록 첫 prefix의 백업을 만들었다.
+4. 데이터가 적을 경우의 예외처리를 추가했다.
+
+*변경된 generate 함수*
+
+#+BEGIN_SRC c
+  /* generate: 한 줄에 한 단어씩 출력 생성 */
+  void generate(int nwords, char *prefix[NPREF])
+  {
+      State *sp;
+      Suffix *suf;
+      char *w;
+      int i, nmatch;
+
+      for (i = 0; i < nwords; i++) {
+          sp = lookup(prefix, 0);
+          nmatch = 0;
+          for (suf = sp->suf; suf != NULL; suf = suf->next)
+              if (rand() % ++nmatch == 0)
+                  w = suf->word;
+          printf("%s ", w);
+          memmove(prefix, prefix+1, (sizeof prefix[0])*(NPREF-1));
+          prefix[NPREF-1] = w;
+      }
+  }
+#+END_SRC
+
+달라진점: 
+
+1. 새로운 인자 prefix를 받는다.
+2. prefix를 NONWORD로 초기화하는 부분이 삭제되었다.
+3. 접미사가 NONWORD이면 루프를 종료하는 부분이 삭제되었다.
+
+*평가*
+
+경계표시를 쓰지 않는다면, 고려할 상황이 크게 늘어나 논리가 복잡해진다.
+그러면서 함수의 책임 범위도 늘어나게 된다. 원래 main 함수는 stdin에
+대해 어떤 작업도 하지 않았지만, 바뀐 main 함수는 입력값을 검증하는
+과정을 포함하고 있다. 또한 경계표시를 쓰지 않기로 결정하면서 끝을
+만났을 때 출력을 멈추는 기능을 포기해야 했다. 원하는 끝 지점을 표현할
+방법이 없게 되었기 때문이다. 만약 이런 기능을 원한다면, 경계표시를
+반드시 넣는 수 밖엔 없다.
+
+** 자바, C++
+
+이 섹션의 목적은 Java나 C++이 제공하는 컨테이너 클래스를 이용하여 C와
+달리 더 적은 코드로 프로그래머의 의도를 표현할 수 있다는 것을 보이기
+위함이므로 그다지 새로운 내용을 담고 있지 않다. 이 섹션들은 건너뛰기로
+하였다.
+
+** 연습
+
+연습문제 3-4, 3-5, 3-6 
+
+*포기*
+
+귀찮음
+
+뭘 자꾸 다시 만들어보래
+
+** Awk와 펄
+
+*Awk 버전*
+
+Awk는 패턴과 액션을 매치시키는 특별한 언어이다. 텍스트 파싱에서 많이
+쓰인다.
+
+#+BEGIN_SRC awk
+  # markov.awk: 두 단어 접두사를 사용하는 마르코프 체인 알고리즘
+  BEGIN {
+      MAXGEN = 1000;
+      NONWORD = "\n";
+      w1 = w2 = NONWORD
+  }
+  { # 모든 줄에 대해 반복된다.
+      for (i = 1; i <= NF; i++) {
+          statetab[w1, w2, ++nsuffix[w1, w2]] = $i
+          w1 = w2
+          w2 = $i
+      }
+  }
+  END {
+      statetab[w1, w2, ++nsuffix[w1, w2]] = NONWORD # 끝에 NONWORD를 추가한다
+      w1 = w2 = NONWORD
+      for (i = 0; i < MAXGEN; i++) {
+          r = int(rand()*nsuffix[w1,w2]) + 1 # >= nsuffix >= 1
+          p = statetab[w1, w2, r]
+          if (p == NONWORD)
+              exit
+          print p
+          w1 = w2
+          w2 = p
+      }
+  }
+#+END_SRC
+
+연관배열의 인덱스가 여러개의 변수로 이루어질 수 있다는 점이 흥미롭다.
+
+*Perl 버전*
+
+펄 버전은 awk 버전과 흡사하지만, 조금 다르다.
+
+#+BEGIN_SRC perl
+  # markov.pl : 두 단어 접두어를 사용하는 마르코프 체인 알고리즘
+  $MAXGEN = 1000;
+  $NONWORD = "\n";
+  $w1 = $w2 = $NONWORD;           # 최초 접두어
+  while (<>) {
+      foreach (split) {
+          push(@{$statetab{$w1}{$w2}}, $_);
+          ($w1, $w2) = ($w2, $_); # 복합 대입
+      }
+  }
+  push(@{$statetab{$w1}{$w2}}, $NONWORD);# 마지막 접두어에 경계표시를 덧붙인다
+
+  $w1 = $2 = $NONWORD;
+  for ($i = 0; $i < $MAXGEN; $i++) {
+      $suf = $statetab{$w1}{$w2}; # 배열을 가져옴
+      $r = int(rand @$suf);       # @$suf는 원소의 개수
+      print "$t\n";
+      ($w1, $w2) = ($w2,$t);      # 접두사 전진
+  }
+#+END_SRC
+
+부입력과 부작용을 적극적으로 활용하는 언어라는데서 흥미롭다. 펄에
+대해서는 잘 모르지만, 위에서 아래로 읽히게끔 잘 쓰인 스크립트인 것
+같다.
+
+** 연습
+
+연습 3-7
+
+*포기*
+
+awk나 펄을 공부하기 귀찮음
+
+*** 연습 3-8
+
+우리는 Scheme, Tcl, Prolog, Python, Generic Java, ML, Haskell 등 여러
+언어로 작성된 마르코프 프로그램을 본 적이 있다. 언어마다 고유의 장점과
+문제가 있으니, 독자가 가장 좋아하는 언어로 마르코프 프로그램을
+작성해보고, 전반적인 느낌과 성능에 대하여 설명해보라.
+
+*파이썬으로*
+
+다른 언어로 만들어보라길래 펄 예제 코드를 파이썬으로 옮겨보았다. 그냥
+딕셔너리를 쓰면 예외 처리가 복잡해져서, defaultdict를 썼더니 아주
+만족스러운 코드를 쓸 수 있었다.
+
+#+BEGIN_SRC python
+  # markov.py: 두 단어 접두어를 사용하는 마르코프 체인 알고리즘
+  from collections import defaultdict
+  import random
+  import sys
+
+  MAXGEN = 1000
+  NONWORD = '\n'
+  w1 = w2 = NONWORD
+
+  statetab = defaultdict(lambda: list())
+  for line in sys.stdin:
+      for item in line.split():
+          statetab[(w1, w2)].append(item)
+          (w1, w2) = (w2, item)
+  statetab[(w1, w2)].append(NONWORD)
+
+  w1 = w2 = NONWORD
+  for i in range(MAXGEN):
+      sufs = statetab[(w1, w2)]
+      suf = random.choice(sufs)
+      if suf == NONWORD:
+          break
+      print(suf, end=' ')
+      (w1, w2) = (w2, suf)
+#+END_SRC
+
+성능은 아주 빨랐다(< 1초). 텍스트가 크지 않아서 그런 것인지 요즘
+컴퓨터나 파이썬 인터프리터가 워낙 좋아져서 그런것인지는 잘 모르겠다.
+
+* 인터페이스
+
+** 소개
+
+- 설계의 핵심은 서로 대립하는 목표와 제약 사이에서 균형을 잡는 데 있다.
+- 설계 단계에서 다뤄야 할 문제들은 다음과 같다.
+  - 인터페이스 :: (전략) 인터페이스란 사실상 ... (중략)
+             ... 계약이다. 이 계약의 목표는 일관성 있고 편리하면서,
+             지나치게 무겁지 않으면서도 쉽게 사용할 수 있을 만큼
+             기능을 충분히 갖춘 서비스를 제공하는 것이다.
+  - 정보 은닉 :: (전략) 인터페이스는 각 컴포넌트에 이르는 분명한 접근
+             경로를 제공해야 하며, 동시에 세부 구현에 대한 정보는
+             숨겨서 사용자에게 영향을 주지 않고 변경할 수 있도록 해야
+             한다.
+  - 자원 관리 :: 메모리나 기타 한정된 자원들을 누가 관리할 것인가?
+             여기에서 주 관심사는 메모리 공간 할당 및 해제나 공유
+             정보들의 관리 문제가 된다.
+  - 에러 처리 :: 누가 에러를 감지하고, ... 보고할 것인가? ... 어떤
+             복구 방법을 시도할 것인가?
+
+이 챕터에서는 콤마 구분값(Comma-Separated Value)를 파싱하는
+라이브러리를 만들어 보며, 인터페이스 설계와 관련된 여러 이슈에 관해
+살펴본다.
+
+** 프로토타입 라이브러리
+
+프레드 브룩스 曰, "한 번은 버릴 마음을 먹어라"
+
+한 번 써보고 버릴 프로토 타입을 만들어본다.
+
+*csvgetline 함수*
+
+#+BEGIN_SRC c
+  char buf[200];
+  char *field[20];
+
+  /* csvgetline: 한 줄씩 읽어 파싱하고 필드 개수를 리턴한다. */
+  /* 입력 예시: "LU", 86.25, "11/4/1998", "2:19PM", +4.0625 */
+  int csvgetline(FILE *fin)
+  {
+      int nfield;
+      char *p, *q;
+      if (fgets(buf, sizeof(buf), fin) == NULL)
+          return -1;
+      nfield = 0;
+      for (q = buf; (p=strtok(q, ",\n\r")) != NULL; q = NULL)
+          field[nfield++] = unquote(p);
+      return nfield;
+  }
+#+END_SRC
+
+
+*unquote 함수*
+
+#+BEGIN_SRC c
+  /* unquote: 여는 따옴표와 닫는 따옴표를 제거 */
+  char *unquote(char *s)
+  {
+      if (s[0] == '"') {
+          if (s[strlen(s)-1] == '"')
+              s[strlen(s)-1] = '\0';
+          s++;
+      }
+      return s;
+  }
+#+END_SRC
+
+s의 앞뒤로 띄어쓰기가 포함되어있거나 따옴표가 중첩된 경우에는 제대로
+처리하지 못한다. 따라서 프로토타입에 쓰기엔 충분하지만 일반적으로는 쓸 수 없다.
+
+*csvtest main 함수*
+
+간단한 테스트 프로그램을 만들어본다.
+
+#+BEGIN_SRC c
+  int main(void)
+  {
+      int i, nf;
+
+      while ((nf = csvgetline(stdin)) != -1)
+          for (i = 0; i < nf; i++)
+              printf("field[%d] = '%s'\n", i, field[i]);
+      return 0;
+  }
+#+END_SRC
+
+*수행 결과*
+
+#+BEGIN_EXAMPLE
+  field[0] = 'LU'
+  field[1] = '86.25'
+  field[2] = '11/4/1998'
+  field[3] = '2:19PM'
+  field[4] = '+4.0625'
+#+END_EXAMPLE
+
+예시 입력을 준 결과이다.
+
+만약 데이터가 맥 오에스에서 작성되어 행 구분자가 CR인 경우, 출력은
+아주 형편없을 것이다. 그리고 컴마 뒤에 띄어쓰기가 붙어 나오는
+경우에도, =unquote= 함수가 오작동하여 출력은 더더욱 형편없을
+것이다. 
+
+*암묵적인 결정들*
+
+- 이 프로토타입은 입력이 아주 길거나 필드가 많은 경우를 처리하지
+  않는다. (buf와 field의 크기에 주목하라)
+- 입력은 여러 줄로 구성되며, 각 줄은 개행문자로 구분된다고 가정하고
+  있다.
+- 각 필드는 콤마로 구분하고, 필드를 둘러싼 따옴표는 제거한다. 필드
+  내용에 따옴표가 콤마가 들어가 있는 경우는 대비하지 않았다.
+- 입력 내용을 보존하지 않고, 필드를 만드는 과정에서 덮어 쓴다(strtok나
+  unquote 함수를 수행하며 buf를 덮어씌우게 된다).
+- 다음 줄로 넘어갈 때 이전 데이터를 저장하지 않는다.
+- ...
+
+** 다른 사람이 쓸 수 있는 라이브러리
+
+
+인터페이스, 정보은닉, 자원관리, 에러처리에 관한 의사결정을 수집하여
+명세서로 만든다. 이상적인 과정은 구현에 앞서 명세서를 작성하는 것이다.
+
+#+BEGIN_EXAMPLE
+  CSV 형식
+
+  - 필드는 콤마로 구분한다.
+  - 필드를 큰 따옴표로 둘러쌀 수도 있다.
+  - 따옴표로 둘러싼 필드는 콤마를 포함할 수 있지만 개행문자는 포함하지 않는다.
+  - 필드는 텅 빌 수 있고 ""로 표시한다. 빈 문자열도 빈 필드를 의미한다.
+  - 앞뒤의 공백은 유지된다.
+
+  char *csvgetline(FILE *f)
+
+  - 열린 입력 파일 f에서 한 줄을 읽어오며, 이 때 입력 줄은 \r, \n, \r\n,
+    EOF 로 끝난다고 가정한다.
+  - 종결자를 제거하고 입력줄에 대한 포인터를 리턴하거나, EOF에 이른 경우
+    NULL을 리턴한다.
+  - 입력줄은 임의의 길이가 될 수 있으며, 만약 메모리가 부족하면 NULL을
+    리턴한다.
+  - 입력줄은 읽기전용 저장공간처럼 취급해야 한다. 입력 내용을 보존하거나
+    변경하려면 반드시 호출자가 복사본을 만들어야 한다.
+
+  char *csvfield(int n)
+
+  - 필드 번호는 0에서 시작한다.
+  - csvgetline이 읽은 마지막 줄에서 n번째 필드를 리턴한다.
+    - n이 0보다 작거나 마지막 필드 번호를 넘어가면 NULL을 리턴한다.
+  - 필드는 콤마로 구분한다.
+  - 필드는 "..."로 둘러쌀 수 있다. 이런 따옴표는 제거된다.
+  - ""..."에서 ""는 "로 대체되며 콤마는 구분자가 아니다.
+  - 따옴표로 둘러싸지 않은 필드에서 따옴표는 일반 문자처럼 취급한다.
+  - 임의의 필드 길이와 갯수가 있을 수 있다.
+    - 메모리가 부족하면 NULL을 리턴한다.
+  - 필드는 읽기 전용 저장공간처럼 취급해야 한다.
+    - 필드 내용을 보존하거나 변경하려면 반드시 호출자가 복사본을
+      만들어야 한다.
+  - csvgetline이 호출되기 전에 이 함수를 호출했을 때의 동작은 정의되지
+    않는다.
+
+  int csvnfield(void)
+
+  - csvgetline이 읽은 마지막 줄에서 필드의 개수를 리턴한다.
+  - csvgetline이 호출되기 전에 이 함수를 호출했을 때의 동작은 정의되지
+    않는다.
+#+END_EXAMPLE
+
+*구현*
+
+인터페이스의 공용 부분을 나타내는 헤더 파일을 우선 작성한다.
+
+#+BEGIN_SRC c
+  /* csv.h: csv 라이브러리의 인터페이스 */
+
+  extern char *csvgetline(FILE *f); /* 다음 줄을 읽는다. */
+  extern char *csvfield(int n);     /* n번째 필드를 리턴한다. */
+  extern int  csvnfield(void);      /* 필드 개수를 리턴한다. */
+#+END_SRC
+
+내부 변수나 함수의 선언은 =static= 으로 하여 다른 코드에 영향을 끼치지
+못하도록 한다.
+
+#+BEGIN_SRC c
+  enum { NOMEM = -2 };            /* 메모리 부족을 표시하는 시그널 */
+
+  static char *line = NULL;       /* 입력된 문자 데이터 */
+  static char *sline = NULL;      /* split이 쓸, line의 복사본 */
+  static int maxline = 0;         /* line[]과 sline[]의 크기 */
+  static char **field = NULL;     /* 필드를 나타내는 포인터들 */
+  static int maxfield = 0;        /* field[]의 크기(capacity) */
+  static int nfield = 0;          /* field[]에 저장된 필드 개수 */
+
+  static char fieldsep[] = ",";   /* 필드 구분에 쓰일 구분자 */
+#+END_SRC
+
+이제 =csvgetline= 함수를 만든다.
+
+#+BEGIN_SRC c
+  static enum {
+      INIT_SIZE = 1,              /* 초기 할당 크기 */
+      INCREASE_FACTOR = 2,        /* 재할당시 증가 배수 */
+  }
+  /* csvgetline: 한 줄 입력 받음, 필요하면 자동으로 메모리 추가 할당함 */
+  /* 입력 예시: "LU",86.25,"11/4/1998","2:19PM",+4.0625 */
+  char *csvgetline(FILE *fin)
+  {
+      int i, c;
+      char *newl, *news;
+      if (line == NULL) {         /* 첫 호출시 메모리 할당 */
+          maxline = maxfield = INIT_SIZE;
+          line = (char *) malloc(maxline);
+          sline = (char *) malloc(maxline);
+          field = (char **) malloc(maxfield*sizeof(field[0]));
+          if (line == NULL || sline == NULL || field == NULL) {
+              reset();
+              return NULL;        /* 메모리 부족 */
+          }
+      }
+      for (i=0;(c=fgetc(fin)) != EOF && !endofline(fin, c); i++) {
+          if (i >= maxline-1) {   /* line을 확장한다. */
+              maxline *= INCREASE_FACTOR;
+              newl = (char *) realloc(line, maxline);
+              news = (char *) realloc(sline, maxline);
+              line = newl;
+              sline = news;
+              if (newl == NULL || news == NULL) {
+                  reset();
+                  return NULL;    /* 메모리 부족 */
+              }
+          }
+          line[i] = c;
+      }
+      line[i] = '\0';
+      if (split() == NOMEM) {
+          reset();
+          return NULL;            /* 메모리 부족 */
+      }
+      return (c == EOF && i == 0) ? NULL : line;
+  }
+#+END_SRC
+
+=csvgetline()= 의 헬퍼 함수들을 구현한다.
+
+#+BEGIN_SRC c
+  /* reset: 변수를 초기 상태로 만든다. */
+  static void reset(void)
+  {
+      free(line);                 /* ANSI C 기준으로 free(NULL) 가능 */
+      free(sline);
+      free(field);
+      line = NULL;
+      sline = NULL;
+      field = NULL;
+      maxline = maxfield = nfield = 0;
+  }
+
+  /* endofline: 검사후 \r, \n, \r\n 또는 EOF를 없앤다 */
+  static int endofline(FILE *fin, int c)
+  {
+      int eol;
+
+      eol = (c=='\r' || c=='\n');
+      if (c == '\r') {
+          c = getc(fin);
+          if (c != '\n' && c != EOF)
+              ungetc(c, fin);     /* line separator가 \r인 경우 더 읽은걸 도로 집어넣는다 */
+      }
+      return eol;
+  }
+#+END_SRC
+
+다음과 같은 특수 케이스들을 처리하기에 strtok는 너무 순수하다.
+
+#+BEGIN_EXAMPLE
+  "",,""
+  ,"",
+  ,,
+#+END_EXAMPLE
+
+이같은 필드를 손쉽게 처리할 수 있도록, =split= 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* split: 입력 줄을 필드로 구분한다. */
+  static int split(void)
+  {
+      char *p, **newf;
+      char *sepp;                 /* 임시 구분자에 대한 포인터 */
+      int sepc;                   /* 임시 구분자 */
+
+      nfield = 0;
+      if (line[0] == '\0')
+          return 0;
+      strcpy(sline, line);
+      p = sline;
+
+      do {
+          if (nfield >= maxfield) {
+              maxfield *= INCREASE_FACTOR;
+              newf = (char **) realloc(field,
+                          maxfield * (sizeof field[0]));
+              if (newf == NULL) {
+                  return NOMEM;
+              }
+              field = newf;
+          }
+          if (*p == '"')
+              sepp = advquoted(++p); /* 시작하는 따옴표는 넘긴다 */
+          else
+              sepp = p + strcspn(p, fieldsep);
+          sepc = sepp[0];
+          sepp[0] = '\0';         /* 필드를 자른다. */
+          field[nfield++] = p;
+          p = sepp + 1;
+      } while (sepc == ',');
+
+      return nfield;
+  }
+#+END_SRC
+
+따옴표로 시작하지 않는다면 다음 콤마를 라이브러리 함수인 =strcspn()=
+으로 찾는다.
+
+이제 따옴표 두개를 하나로 줄이고 필드를 둘러싼 따옴표도 제거하는
+=advquoted()= 헬퍼 함수를 작성한다. 처리 로직이 이렇게 복잡해진 이유는
+=abc"def= 와 같이 명세서에는 맞지 않는 문자열도 적당히 처리할 수
+있도록 하기 위해서이다.
+
+#+BEGIN_SRC c
+  /* advquoted: 따옴표로 둘러싼 필드의 따옴표를 제거하고 다음 구분자를
+   ,* 가리키는 포인터를 리턴한다. */
+  static char *advquoted(char *p)
+  {
+      int i, j;
+      for (i = j = 0; p[j] != '\0'; i++, j++) {
+          if (p[j] == '"' && p[++j] != '"') {
+              /* 다음 구분자나 \0이 나오는 부분까지 복사한다 */
+              int k = strcspn(p+j, fieldsep);
+              memmove(p+i, p+j, k);
+              i += k;
+              j += k;
+              break;
+          }
+          p[i] = p[j];
+      }
+      p[i] = '\0';
+      return p + j;
+  }
+#+END_SRC
+
+이제 =csvfield=, =csvnfield= 함수를 만든다. =csvgetline= 함수에서 미리
+=split= 함수를 호출해두었으므로, 비교적 간단하다.
+
+#+BEGIN_SRC c
+  /* csvfield: n번째 필드에 대한 포인터를 리턴한다. */
+  char *csvfield(int n)
+  {
+      if (n < 0 || n >= nfield)
+          return NULL;
+      return field[n];
+  }
+#+END_SRC
+
+#+BEGIN_SRC c
+  /* csvnfield: 필드 개수를 리턴한다. */
+  int csvnfield(void)
+  {
+      return nfield;
+  }
+#+END_SRC
+
+마지막으로 테스트 프로그램을 작성하여 제대로 동작하는지 테스트해본다.
+
+#+BEGIN_SRC c
+  #include <stdio.h>
+  #include "csv.h"
+
+  int main(void)
+  {
+      int i;
+      char *line;
+
+      while ((line = csvgetline(stdin)) != NULL) {
+          printf("line = '%s'\n", line);
+          for (i = 0; i < csvnfield(); i++)
+              printf("field[%d] = '%s'\n", i, csvfield(i));
+      }
+      return 0;
+  }
+#+END_SRC
+
+프로토타입에 비해 길이가 네 배(혹은 그 이상) 정도 증가했고, 일부
+코드는 아주 복잡해졌다. 이는 프로토타입에서 제품 단계로 넘어갈 때 흔히
+있는 현상이다.
+
+** 연습
+
+*** 연습 4-1
+
+필드를 나눌 때 게으름 정도를 여러 단계로 적용할 수 있다. 일부 필드가
+필요할 때 전체 필드를 한꺼번에 분리하는 방법도 있고, 필요한 필드만
+분리하는 방법도 있고, 필요한 필드까지만 분리하는 방법도 있다. 가능한
+방법들을 열거하고 각각을 구현할 때 잠재적인 장애요인과 장점을 평가한
+뒤, 실제로 코드를 작성하여 속도를 측정하라.
+
+*게으름 정도에 관하여*
+
+가장 부지런한(eager) 방법은 지금과 같이 읽는 즉시 파싱하는 방법일
+것이다. 이 방법은 구현이 가장 간편하고 =csvfield= 함수와 =csvnfield=
+함수가 적절한 입력에 대해 항상 실패하지 않음을 보장할 수 있어 예외
+처리가 편리하다. 그러나 불필요한 경우에도 반드시 =split= 함수를
+호출하기 때문에 일정 수준의 성능 저하를 각오해야 한다.
+
+가장 게으른(lazy) 방법은 제시된대로 필요한 만큼만 파싱하는
+방법이다. 예로, =csvfield(n)= 의 인자 n에 대해 n번째 컴마를 발견할 때
+까지만 파싱한 뒤, 나머지는 남겨두는 방법이다. 이런 방법에선 n이 작을
+수록 성능에 유리하고, 만약 =csvnfield()= 함수가 호출된다면 어쩔 수
+없이 모든 필드를 파싱해야 할 것이다. 이 방법은 아주 복잡한 =split=
+함수를 수정하여 필요한 만큼만 파싱할 수 있도록, 어디까지 파싱되었는지
+알 수 있도록 고쳐 써야 한다. 이 방법은 구현에 아주 오랜 시간과 노력이
+필요하고 테스팅이 까다롭다. 물론 가장 성능에 유리하다는 장점도 있다.
+
+가장 부지런한것도 아니고 가장 게으른것도 아닌, 그 중간쯤에 위치하는
+방법은 필요치 않다면 csv를 파싱하지 않고, 필요하다면 csv를 모두
+파싱하는 방법이다. 이것은 가장 게으른 방법만큼 구현이 번거롭지도 않고,
+가장 부지런한 방법만큼 값비싸지도 않다. 실제로, 별다른 수정 없이 코드
+몇 줄을 더 써넣는 것으로 구현할 수 있다.
+
+*반쯤 게으른 방법의 구현*
+
+다음은 기존의 =csvgetline()= 함수의 일부이다.
+
+#+BEGIN_SRC c
+      for (i=0;(c=fgetc(fin)) != EOF && !endofline(fin, c); i++) {
+          ...
+          line[i] = c;
+      }
+      line[i] = '\0';
+      if (split() == NOMEM) {
+          reset();
+          return NULL;            /* 메모리 부족 */
+      }
+      return (c == EOF && i == 0) ? NULL : line;
+  }
+#+END_SRC
+
+split은 이제 =csvgetline= 함수에서 없어져야 한다. 새로운 입력값이
+들어왔는지 알려주는 =is_new= 전역 변수를 만들고, =csvgetline= 함수를
+다음과 같이 수정한다.
+
+#+BEGIN_SRC c
+      for (i=0;(c=fgetc(fin)) != EOF && !endofline(fin, c); i++) {
+          ...
+          line[i] = c;
+      }
+      line[i] = '\0';
+      if (c == EOF && i == 0)
+          return NULL;
+      is_new = 1;
+      return line;
+  }
+#+END_SRC
+
+이제 =csvfield= 와 =csvnfield= 함수가 게으르게 동작하도록 고친다.
+
+#+BEGIN_SRC c
+  char *csvfield(int n)
+  {
+      if (n < 0 || n >= nfield)
+          return NULL;
+      if (is_new) {
+          if (split() == NOMEM) {
+              reset();
+              return NULL;
+          }
+      }
+      return field[n];
+  }
+#+END_SRC
+
+#+BEGIN_SRC c
+  int csvnfield(void)
+  {
+      if (is_new) {
+          if (split() == NOMEM) {
+              reset();
+              return 0;
+          }
+      }
+      return nfield;
+  }
+#+END_SRC
+
+*속도 측정*
+
+속도 측정에 앞서, 충분히 큰 입력을 만들 수 있는 프로그램을 작성한다.
+
+#+BEGIN_SRC c
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  char line[1024];
+
+  void random_string(char s[], int size)
+  {
+      int i;
+      int len = size-1;
+      static const int nalpha = 'z'-'a'+1;
+      for (i = 0; i < len; i++)
+          s[i] = rand() % nalpha + 'a';
+      s[len] = ',';               /* 구두점 */
+  }
+
+  char *genline()
+  {
+      char *s = line;
+      /* 10개의 필드 생성 */
+      for (int i = 0; i < 10; i++) {
+          /* 각 토큰의 길이는(구두점 포함) 10바이트 */
+          random_string(s, 10);
+          s += 10;
+      }
+      ,*(s-1) = '\0';
+      return line;
+  }
+
+  int main()
+  {
+      /* 10만줄 생성 */
+      for (int i=0; i < 100000; i++)
+          printf("%s\n", genline());
+  }
+#+END_SRC
+
+9.6MB의 csv파일을 만들 수 있었다.
+
+성능 측정을 위한 템플릿 함수를 작성한다.
+
+#+BEGIN_SRC c
+  #include <time.h>
+
+  typedef void (*fn_t)(void);
+
+  // elapsed_time: 주어진 작업을 하는데 소요된 밀리세컨드 반환
+  // before과 after은 NULL로 생략될 수 있음
+  double elapsed_time(int n, fn_t before, fn_t task, fn_t after)
+  {
+      clock_t start, end, elapsed = 0;
+      for (int i = 0; i < n; i++) {
+          if (before) (*before)();
+          start = clock();
+          (*task)();
+          end = clock();
+          elapsed += end - start;
+          if (after) (*after)();
+      }
+      return (double)elapsed/(CLOCKS_PER_SEC/1000);
+  }
+#+END_SRC
+
+이 함수를 이용해 성능을 체크하는 프로그램을 만든다.
+
+#+BEGIN_SRC c
+  const char *filepath = "input.txt";
+  FILE *in = NULL;
+
+  void before_job(void)
+  {
+      in = fopen(filepath, "r");
+      if (!in) {
+          perror("opening input file");
+          exit(1);
+      }
+  }
+
+  void task(void)
+  {
+      while (csvgetline(in) != NULL)
+          ;
+  }
+
+  void after_job(void)
+  {
+      if (fclose(in) == EOF) {
+          perror("closing input file");
+          exit(1);
+      }
+  }
+
+  int main(void)
+  {
+      double time;
+      time = elapsed_time(10, &before_job,
+                          &task, &after_job);
+      printf("elapsed_time: %.2fms", time);   
+  }
+#+END_SRC
+
+*수행 결과*
+
+'조금 게으른' 버전에 대한 성능평가
+ 
+#+BEGIN_EXAMPLE
+  elapsed_time: 2863.00ms
+#+END_EXAMPLE
+
+'부지런한' 버전에 대한 성능평가
+#+BEGIN_EXAMPLE
+  elapsed_time: 3061.00ms
+#+END_EXAMPLE
+
+=split= 을 안하는 것으로 50%가량 성능상의 이득을 볼 수 있었다. 그러나
+실제 사용시에 =split= 을 안 할 경우보다 할 경우가 더 많을 테니 큰
+이득인지는 미지수이다.
+
+
+*** 연습 4-2.
+
+구분자를 (a) 임의의 문자 조합, (b) 필드마다 서로 다른 구분자, (c) 정규
+표현식(9장 참조)으로 바꿀 수 있는 기능을 추가하라. 인터페이스는 어떤
+형태가 되어야 하겠는가?
+
+*데이터를 고려하기*
+
+신기능을 구현할 경우 어떤 예외적인 데이터가 들어올 수 있어야 할지
+생각해본다. (a) 기능은 아마도 다음과 같은 데이터를 가정한것 같다.
+
+#+BEGIN_EXAMPLE
+  field11, field12, field13
+  field21/field22/field23
+  field31 & field32 & field33
+#+END_EXAMPLE
+
+첫 줄은 구분자가 컴마+띄어쓰기인 경우이다. 두번째, 세번째 줄은 csv
+형식은 아니지만 csv와 매우 유사한 데이터이다.
+
+(b) 기능은 다음과 같은 데이터를 가정한 것 같다.
+
+#+BEGIN_EXAMPLE
+  저자. 출판년도. "챕터명" in 단행본명, 페이지. 출판지: 출판사.
+  Hemingway, Ernest Miller. 1952. "Map of Cuba." in The Old Man and the Sea, 100. NY: Charles Scribner's son.
+#+END_EXAMPLE
+
+복잡한 구분자가 서로 얽혀있다. 이런 경우 정규표현식으로 처리하는 것이
+낫다고 생각하지만 어쨌든 정규표현식을 어려워하는 사람들이 있다. 이런
+데이터 입력은 대개 정형화되어있어 많은 예외처리가 필요치 않다.
+
+(c) 기능은 기계가 만들어내는 일관된 포맷이 아닌 경우, 예를 들어
+
+#+BEGIN_EXAMPLE
+  field1, field2 , field3,field4
+#+END_EXAMPLE
+
+이와 같이 제멋대로 띄어쓰기가 붙어있는 경우에 유용할 것이다. 이 경우는
+ANSI C에 정규표현식 라이브러리가 없으므로 구현하지 않는다.
+
+*제약사항*
+
+- 세 기능은 동시에 사용될 수 없다. 즉, 한 번 =csvgetline()= 으로
+  받아왔다면 그 줄의 필드는 모두 (a), (b), (c) 기능 중 하나만을
+  사용하여 분리되어야 한다.
+- 별도의 구분자 지정이 없다면 기본 구분자는 컴마이다.
+- 구분자 유형을 한 번 지정하면, 인터페이스 프로그래머가 다시 구분자
+  유형을 지정할 때까지 유지되어야 한다.
+
+*명세서*
+
+#+BEGIN_EXAMPLE
+  구분자에 대하여
+
+  - 구분자는 한 줄 안에서 필드를 구분하는 문자열이다.
+  - 구분자를 지정하는 유형은 세가지이다.
+    - 구분자는 임의의 문자 조합이 될 수 있다.
+    - 필드별로 다른 구분자를 지정할 수 있다.
+    - 정규표현식으로 구분자를 지정할 수 있다.
+  - 한 줄에 하나의 구분자 유형을 지정할 수 있다.
+  - 기본 구분자는 컴마이다.
+  - 따옴표로 둘러싸인 필드 내에선 구분자로 취급할 수 있는 문자열이
+    있더라도 구분자로 보지 않는다.
+
+  enum septype;
+
+  - 구분자의 유형이다.
+  - 미리 정의된 상수:
+    - DEFAULT_SEP :: 기본 구분자로 지정
+    - STRING_SEP :: 임의의 문자 조합으로 지정
+    - FIELD_SEP :: 필드별로 다른 구분자로 지정
+    - REGEX_SEP :: 정규식 구분자로 지정
+
+  void resetsep(enum septype type);
+
+  - 설정된 구분자를 초기화 하고 유형을 주어진 type으로 변경한다.
+
+  int ssep(char *sep);
+
+  - 구분자 유형이 STRING_SEP일 때, 문자열 구분자를 지정한다.
+  - 구분자 유형이 STRING_SEP이 아니라면, 기존에 설정된 구분자를
+    초기화하고 유형을 STRING_SEP으로 바꾼다.
+  - 주어진 문자열 블록 sep은 라이브러리 내부로 내용이 복사되므로 임의로
+    수정 가능하다.
+  - 성공시 1, 실패시 0을 반환한다.
+
+  int fsep(int idx, char *sep);
+
+  - 구분자 유형이 FIELD_SEP일때, idx번째 필드 다음에 나타나는 구분자를
+    지정한다.
+  - idx는 0부터 시작한다.
+  - 구분자 유형이 FIELD_SEP이 아니라면, 기존에 설정된 구분자를
+    초기화하고 유형을 FIELD_SEP으로 바꾼다.
+  - 주어진 문자열 블록 sep은 라이브러리 내부로 내용이 복사되므로 임의로
+    수정 가능하다.
+  - 성공시 1, 실패시 0을 반환한다.
+
+  int rsep(char *regex);
+
+  - 미구현
+#+END_EXAMPLE
+
+
+
+
