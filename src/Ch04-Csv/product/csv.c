@@ -1,6 +1,7 @@
 #include "csv.h"
 #include <stdlib.h>
 #include <string.h>
+
 enum {
     NOMEM = -2,                 /* 메모리 부족을 표시하는 시그널 */
     INIT_SIZE = 1,              /* 메모리블록 초기 할당 크기 */
@@ -15,12 +16,35 @@ static int maxfield = 0;        /* field[]의 크기(capacity) */
 static int nfield = 0;          /* field[]에 저장된 필드 개수 */
 static int is_new = 0; /* 새로운 데이터가 들어왔는가? 들어왔다면 split()해야할것이다... */
 
-static char fieldsep[] = ",";   /* 필드 구분에 쓰일 구분자 */
+static char *defaultsep = ",";  /* 기본 구분자 */
+static char *fieldsep = NULL;   /* 필드 구분에 쓰일 구분자 */
+static int  sepsz  = 0;         /* 구분자 할당크기 */
+static int  seplen = 0;         /* 구분자 길이 */
 
 static void reset(void);
 static int endofline(FILE *fin, int c);
 static int split(void);
 static char *advquoted(char *p);
+
+int ssep(char *sep)
+{
+    int len;
+    len = strlen(sep);
+    if (sepsz < len+1) {        /* 메모리 할당 */
+        char *newp;
+        sepsz = len + 1;
+        newp = (char *) malloc(
+                    (sizeof fieldsep[0]) * sepsz);
+        if (!newp)              /* 실패 */
+            return 0;
+        if (fieldsep)
+            free(fieldsep);
+        fieldsep = newp;
+    }
+    strcpy(fieldsep, sep);
+    seplen = len;
+    return 1;
+}
 
 /* csvgetline: 한 줄 입력 받음, 필요하면 자동으로 메모리 추가 할당함 */
 /* 입력 예시: "LU",86.25,"11/4/1998","2:19PM",+4.0625 */
@@ -89,9 +113,11 @@ static int endofline(FILE *fin, int c)
 static int split(void)
 {
     char *p, **newf;
-    char *sepp;                 /* 임시 구분자에 대한 포인터 */
-    int sepc;                   /* 임시 구분자 */
+    char *sepp;                 /* 입력 줄 내의 구분자를 가리킴 */
+    int sepc;                   /* sepp[0] 임시 저장소 */
 
+    if (!fieldsep)
+        ssep(defaultsep);
     nfield = 0;
     if (line[0] == '\0')
         return 0;
@@ -115,9 +141,8 @@ static int split(void)
         sepc = sepp[0];
         sepp[0] = '\0';         /* 필드를 자른다. */
         field[nfield++] = p;
-        p = sepp + 1;
-    } while (sepc == ',');
-
+        p = sepp + seplen;
+    } while (sepc == fieldsep[0] && strncmp(sepp+1, fieldsep+1, seplen-1) == 0);
     return nfield;
 }
 
@@ -126,6 +151,12 @@ static int split(void)
 static char *advquoted(char *p)
 {
     int i, j;
+    /* 코드 해설: 
+     * 일반적인 경우, 
+     * 따옴표가 연속으로 나오는 경우,
+     * 따옴표가 한개만 있는 경우로 구분하여 생각하면 편하다.
+     * 명세에 맞지 않는 "abc"def" 와 같은 입력은 제대로 처리할 수 없다. 
+     * 명세에 맞지 않지만 "abc"def 와 같은 입력은 제대로 처리된다. */
     for (i = j = 0; p[j] != '\0'; i++, j++) {
         if (p[j] == '"' && p[++j] != '"') {
             /* 다음 구분자나 \0이 나오는 부분까지 복사한다 */
@@ -151,6 +182,7 @@ char *csvfield(int n)
             reset();
             return NULL;
         }
+        is_new = 0;
     }
     return field[n];
 }
@@ -163,6 +195,7 @@ int csvnfield(void)
             reset();
             return 0;
         }
+        is_new = 0;
     }
     return nfield;
 }

@@ -5107,6 +5107,7 @@ split은 이제 =csvgetline= 함수에서 없어져야 한다. 새로운 입력�
               reset();
               return NULL;
           }
+          is_new = 0;
       }
       return field[n];
   }
@@ -5120,6 +5121,7 @@ split은 이제 =csvgetline= 함수에서 없어져야 한다. 새로운 입력�
               reset();
               return 0;
           }
+          is_new = 0;
       }
       return nfield;
   }
@@ -5350,6 +5352,150 @@ ANSI C에 정규표현식 라이브러리가 없으므로 구현하지 않는다
   - 미구현
 #+END_EXAMPLE
 
+*csv.h 수정*
 
+명세를 바탕으로 =csv.h= 파일에 인터페이스를 선언해둔다.
 
+#+BEGIN_SRC c
+  enum septype {
+      DEFAULT_SEP,                /* 기본 구분자 유형 */
+      STRING_SEP,                 /* 임의 문자열 구분자 유형 */
+      FIELD_SEP,                  /* 필드별 구분자 유형 */
+      REGEX_SEP,                  /* 정규식 구분자: 미구현. */
+  };
 
+  extern void resetsep(enum septype type); /* 설정된 구분자 초기화 */
+  extern int ssep(char *sep);              /* 임의 문자열 구분자 지정 */
+  extern int fsep(int idx, char *sep);     /* idx번째 필드 구분자 지정 */
+#+END_SRC
+
+*밑작업*
+
+코드 수정은 최소한으로 하는 것이 버그를 최소화하는데도 도움이 된다.
+기존의 코드에서 앞으로의 작업을 위해 변화를 주자. 우선 지금 당장
+보이는 부분에서 일반화할 수 있는 부분이 있다. 필드 구분자를 임의의
+문자 조합으로 설정할 수 있도록 바꿀 수 있다.
+
+#+BEGIN_SRC c
+  static char fieldsep[] = ",";   /* 필드 구분에 쓰일 구분자 */
+#+END_SRC
+
+이 부분을 더 일반적으로 바꾸어 본다.
+
+#+BEGIN_SRC c
+  static char *defualtsep = ",";  /* 기본 구분자 */
+  static char *fieldsep = NULL;   /* 필드 구분에 쓰일 구분자 */
+  static int  sepsz  = 0;         /* 구분자 할당크기 */
+  static int  seplen = 0;         /* 구분자 길이 */
+#+END_SRC
+
+현재의 =split= 함수는 =fieldsep= 이 1글자임을 가정하고 정의되어있다.
+이를 좀 더 일반화할 방법이 있다. 다음은 기존의 =split= 함수 말단이다.
+
+#+BEGIN_SRC c
+          p = sepp + 1;
+      } while (sepc == ',');
+      return nfield;
+  }
+#+END_SRC
+
+다음과 같이 수정하는 것으로 임의 길이의 필드 구분자를 이용해 =split=
+할 수 있다.
+
+#+BEGIN_SRC c
+          p = sepp + seplen;
+      } while (sepc == fieldsep[0] && strncmp(sepp+1, fieldsep+1, seplen-1) == 0);
+      return nfield;
+  }
+#+END_SRC
+
+또한, 별도의 수정 없이도 레거시 코드가 제대로 돌아가도록 =split= 에
+=fieldsep= 기본값을 설정해주는 코드를 넣는다. =ssep= 은 다음 섹션에서
+구현한다.
+
+#+BEGIN_SRC c
+  /* split: 입력 줄을 필드로 구분한다. */
+  static int split(void)
+  {
+      char *p, **newf;
+      char *sepp;                 /* 임시 구분자에 대한 포인터 */
+      int sepc;                   /* 임시 구분자 */
+
+      if (!fieldsep)              /* 추가된 부분 */
+          ssep(defaultsep);       /* 추가된 부분 */
+
+#+END_SRC
+
+*임의 문자열 구분자 지원*
+
+=ssep= 함수를 구현한다.
+
+#+BEGIN_SRC c
+  int ssep(char *sep)
+  {
+      int len;
+      len = strlen(sep);
+      if (sepsz < len+1) {        /* 메모리 할당 */
+          char *newp;
+          sepsz = len + 1;
+          newp = (char *) malloc(
+                      (sizeof fieldsep[0]) * sepsz);
+          if (!newp)              /* 실패 */
+              return 0;
+          if (fieldsep)
+              free(fieldsep);
+          fieldsep = newp;
+      }
+      strcpy(fieldsep, sep);
+      seplen = len;
+      return 1;
+  }
+#+END_SRC
+
+*시험 주행*
+
+가끔씩, 웹 페이지를 드래그로 긁어오다 보면 특수문자들이 엔터티 코드로
+치환되어있는 경우가 있다. 그런 상황의 데이터는 다음과 같을 것이다.
+
+#+BEGIN_EXAMPLE
+  "Region"&comma;"City"&comma;"Entry Number"&comma;"Alias"
+  "Asia Pacific"&comma;"Seoul"&comma;32&comma;"Asia/Seoul"
+#+END_EXAMPLE
+
+이런 경우 모든 =&comma;= 를 치환해도 되긴 하지만, 우리가 지금까지
+변경한 프로그램으로도 이정도 입력에 충분히 대응할 수 있다. =csvtest.c=
+의 내용을 바꾼다.
+
+#+BEGIN_SRC c
+  int main(void)
+  {
+      int i;
+      char *line;
+
+      ssep("&comma;");
+      while ((line = csvgetline(stdin)) != NULL) {
+          printf("line = '%s'\n", line);
+          for (i = 0; i < csvnfield(); i++)
+              printf("field[%d] = '%s'\n", i, csvfield(i));
+      }
+      return 0;
+  }
+#+END_SRC
+
+수행 결과는 다음과 같다.
+
+#+BEGIN_EXAMPLE
+  CMD> ./csvtest.exe < input.txt
+  line = '"Region"&comma;"City"&comma;"Entry Number"&comma;"Alias"'
+  field[0] = 'Region'
+  field[1] = 'City'
+  field[2] = 'Entry Number'
+  field[3] = 'Alias'
+  line = '"Asia Pacific"&comma;"Seoul"&comma;32&comma;"Asia/Seoul"'
+  field[0] = 'Asia Pacific'
+  field[1] = 'Seoul'
+  field[2] = '32'
+  field[3] = 'Asia/Seoul'
+#+END_EXAMPLE
+
+*필드별 구분자 지원*

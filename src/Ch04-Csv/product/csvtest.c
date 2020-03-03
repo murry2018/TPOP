@@ -6,6 +6,7 @@ int main(void)
     int i;
     char *line;
 
+    ssep("&comma;");
     while ((line = csvgetline(stdin)) != NULL) {
         printf("line = '%s'\n", line);
         for (i = 0; i < csvnfield(); i++)
