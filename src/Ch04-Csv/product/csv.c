@@ -14,21 +14,56 @@ static int maxline = 0;         /* line[]과 sline[]의 크기 */
 static char **field = NULL;     /* 필드를 나타내는 포인터들 */
 static int maxfield = 0;        /* field[]의 크기(capacity) */
 static int nfield = 0;          /* field[]에 저장된 필드 개수 */
-static int is_new = 0; /* 새로운 데이터가 들어왔는가? 들어왔다면 split()해야할것이다... */
-
+static int is_new = 0;          /* 새로운 데이터가 들어왔는가? */
+/* 구분자 관련 */
+static enum septype
+    _septype = DEFAULT_SEP;     /* 현재 구분자 유형 */
+/* 임의 문자열 구분자 */
 static char *defaultsep = ",";  /* 기본 구분자 */
 static char *fieldsep = NULL;   /* 필드 구분에 쓰일 구분자 */
 static int  sepsz  = 0;         /* 구분자 할당크기 */
 static int  seplen = 0;         /* 구분자 길이 */
+/* 필드별 구분자 지원 */
+static char **manysep = NULL;   /* 구분자 목록 */
+static int  ms_capa = 0;        /* 구분자 목록 할당 크기 */
+static int  ms_nmemb = 0;       /* 구분자 개수 */
+static int  *ms_eachsz = NULL;  /* 각각의 구분자 할당 크기 */
+static int  *ms_eachlen = NULL; /* 각각의 구분자 길이 */
 
 static void reset(void);
 static int endofline(FILE *fin, int c);
+static char *advquoted(char *p, char *fieldsep);
 static int split(void);
-static char *advquoted(char *p);
+static int splits(void);
+static int splitf(void);
+
+/* clearfsep: 필드 구분자를 초기화한다. */
+static void clearfsep()
+{
+    int i;
+    for (i = 0; i < ms_capa; i++)
+        ms_eachlen[i] = 0;
+    ms_nmemb = 0;
+}
+
+/* resetsep: 구분자 유형을 변경하고 적절한 초기화를 수행한다. */
+void resetsep(enum septype type)
+{
+    /* 임의 문자열 구분자 유형에 대한 초기화 작업 */
+    ssep(defaultsep);
+    /* 필드별 구분자 유형에 대한 초기화 작업 */
+    clearfsep();
+    
+    _septype = type;
+}
 
 int ssep(char *sep)
 {
     int len;
+    /* 구분자 유형을 변경한다. */
+    if (_septype != DEFAULT_SEP || _septype != STRING_SEP)
+        _septype = STRING_SEP;
+    
     len = strlen(sep);
     if (sepsz < len+1) {        /* 메모리 할당 */
         char *newp;
@@ -43,6 +78,59 @@ int ssep(char *sep)
     }
     strcpy(fieldsep, sep);
     seplen = len;
+    return 1;
+}
+
+int fsep(int idx, char *sep)
+{
+    int newsz, newnmemb, newsepsz;
+    char **newms, *newf;
+    int  *new_eachsz, *new_eachlen;
+    if (_septype != FIELD_SEP) {
+        clearfsep();
+        _septype = FIELD_SEP;
+    }
+    newnmemb = idx+1;
+    if (ms_nmemb < newnmemb)
+        ms_nmemb = newnmemb;
+    /* manysep의 블록이 부족할 경우 확장 */
+    if (ms_capa < newnmemb) {  
+        newsz = (ms_capa? ms_capa * INCREASE_FACTOR : newnmemb);
+        newms = (char **) realloc (manysep,
+                    newsz * (sizeof manysep[0]));
+        new_eachsz = (int *) realloc(ms_eachsz,
+                          newsz * (sizeof ms_eachsz[0]));
+        new_eachlen = (int *) realloc(ms_eachlen,
+                           newsz * (sizeof ms_eachlen[0]));
+        if (newms == NULL || new_eachsz == NULL || new_eachlen == NULL) {
+            free(newms);
+            free(new_eachsz);
+            free(new_eachlen);
+            return 0;
+        }
+        for (int i = ms_capa; i < newsz; i++) {
+            newms[i] = NULL;
+            new_eachsz[i] = 0;
+            new_eachlen[i] = 0;
+        }
+        manysep = newms;
+        ms_eachsz = new_eachsz;
+        ms_eachlen = new_eachlen;
+        ms_capa = newsz;
+    }
+    /* manysep[idx]의 메모리 블록이 부족할 경우 확장 */
+    newsepsz = strlen(sep)+1; 
+    if (ms_eachsz[idx] < newsepsz) { 
+        newsepsz = newsepsz;
+        newf = (char *) realloc (manysep[idx],
+                    newsepsz * (sizeof manysep[idx][0]));
+        if (newf == NULL)
+            return 0;
+        ms_eachsz[idx] = newsepsz;
+        manysep[idx] = newf;
+    }
+    strcpy(manysep[idx], sep);
+    ms_eachlen[idx] = newsepsz-1;
     return 1;
 }
 
@@ -112,6 +200,30 @@ static int endofline(FILE *fin, int c)
 /* split: 입력 줄을 필드로 구분한다. */
 static int split(void)
 {
+    int ret;
+    switch (_septype) {
+    case DEFAULT_SEP:
+        ssep(defaultsep);
+        ret = splits();
+        break;
+    case STRING_SEP:
+        ret = splits();
+        break;
+    case FIELD_SEP:
+        ret = splitf();
+        break;
+    case REGEX_SEP:
+        /* fall-through */
+    default:
+        ret = 0;
+    }
+    return ret;
+}
+    
+
+/* splits: 입력 줄을 임의 조합 문자열을 이용해 필드로 구분한다. */
+static int splits(void)
+{
     char *p, **newf;
     char *sepp;                 /* 입력 줄 내의 구분자를 가리킴 */
     int sepc;                   /* sepp[0] 임시 저장소 */
@@ -135,9 +247,9 @@ static int split(void)
             field = newf;
         }
         if (*p == '"')
-            sepp = advquoted(++p); /* 시작하는 따옴표는 넘긴다 */
+            sepp = advquoted(++p, fieldsep); /* 시작하는 따옴표는 넘긴다 */
         else
-            sepp = p + strcspn(p, fieldsep);
+            sepp = strstr(p, fieldsep);
         sepc = sepp[0];
         sepp[0] = '\0';         /* 필드를 자른다. */
         field[nfield++] = p;
@@ -146,9 +258,56 @@ static int split(void)
     return nfield;
 }
 
+/* splitf: 입력 줄을 필드마다 다른 구분자로 파싱한다. */
+static int splitf(void)
+{
+    char *p, **newf;
+    char *sepp;                 /* 입력 줄 내의 구분자를 가리킴 */
+    int sepc;                   /* sepp[0] 임시 저장소 */
+    char *fieldsep;             /* 현재 구분자 */
+    int seplen;                 /* 현재 구분자의 길이 */
+    
+    nfield = 0;
+    if (line[0] == '\0')
+        return 0;
+    strcpy(sline, line);
+    p = sline;
+    if (maxfield < ms_nmemb+1) {
+        maxfield = ms_nmemb+1;
+        newf = (char **) realloc(field,
+                    maxfield * (sizeof field[0]));
+        if (newf == NULL)
+            return NOMEM;
+        field = newf;
+    }
+    for (int i = 0; i < ms_nmemb; i++) {
+        fieldsep = manysep[i];
+        seplen = ms_eachlen[i];
+        if (!fieldsep) {
+            fieldsep = defaultsep;
+            seplen = 1;
+        }
+        if (*p == '"')
+            sepp = advquoted(++p, fieldsep); /* 시작하는 따옴표는 넘긴다 */
+        else
+            sepp = strstr(p, fieldsep);
+        sepc = sepp[0];
+        sepp[0] = '\0';         /* 필드를 자른다. */
+        field[nfield++] = p;
+        p = sepp + seplen;
+        if (sepc != fieldsep[0] ||
+            strncmp(sepp+1, fieldsep+1, seplen-1) != 0)
+            break;
+    }
+    if (*p != '\0') {
+        field[nfield++] = p;
+    }
+    return nfield;
+}
+
 /* advquoted: 따옴표로 둘러싼 필드의 따옴표를 제거하고 다음 구분자를
  * 가리키는 포인터를 리턴한다. */
-static char *advquoted(char *p)
+static char *advquoted(char *p, char *fieldsep)
 {
     int i, j;
     /* 코드 해설: 
@@ -160,7 +319,7 @@ static char *advquoted(char *p)
     for (i = j = 0; p[j] != '\0'; i++, j++) {
         if (p[j] == '"' && p[++j] != '"') {
             /* 다음 구분자나 \0이 나오는 부분까지 복사한다 */
-            int k = strcspn(p+j, fieldsep);
+            int k = strstr(p+j, fieldsep) - (p+j);
             memmove(p+i, p+j, k);
             i += k;
             j += k;

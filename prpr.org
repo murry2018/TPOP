@@ -5346,6 +5346,10 @@ ANSI C에 정규표현식 라이브러리가 없으므로 구현하지 않는다
   - 주어진 문자열 블록 sep은 라이브러리 내부로 내용이 복사되므로 임의로
     수정 가능하다.
   - 성공시 1, 실패시 0을 반환한다.
+  - 빠뜨린 인덱스가 있는 경우 csvfield 및 csvnfield 함수의 행동은
+    정의되지 않는다. 예컨대, csvfield 및 csvnfield를 호출하기 전에 2,
+    3번 인덱스의 구분자는 지정하고 1번은 빠뜨린 경우, 1번 구분자로 어떤
+    구분자가 지정될 지 알 수 없다.
 
   int rsep(char *regex);
 
@@ -5407,6 +5411,27 @@ ANSI C에 정규표현식 라이브러리가 없으므로 구현하지 않는다
       } while (sepc == fieldsep[0] && strncmp(sepp+1, fieldsep+1, seplen-1) == 0);
       return nfield;
   }
+#+END_SRC
+
+더불어, =strcspn= 함수가 쓰인 부분도 다음과 같이 수정한다. =split=
+함수와 =advquoted= 함수에서 쓰였다.
+
+#+BEGIN_SRC c
+  /* split 함수의 일부분 */
+  if (*p == '"')
+      sepp = advquoted(++p, fieldsep); /* 시작하는 따옴표는 넘긴다 */
+  else
+      sepp = strstr(p, fieldsep);
+  /* advquoted 함수의 일부분 */
+  int k = strstr(p+j, fieldsep) - (p+j);
+  memmove(p+i, p+j, k);
+#+END_SRC
+
+=advquoted= 함수에서 전역변수의 바인딩을 분리했다. 이제 =advquoted=
+함수의 원형은 다음과 같다.
+
+#+BEGIN_SRC c
+  static char *advquoted(char *p, char *fieldsep);
 #+END_SRC
 
 또한, 별도의 수정 없이도 레거시 코드가 제대로 돌아가도록 =split= 에
@@ -5499,3 +5524,312 @@ ANSI C에 정규표현식 라이브러리가 없으므로 구현하지 않는다
 #+END_EXAMPLE
 
 *필드별 구분자 지원*
+
+필드별 구분자와 관련된 전역 변수들을 선언한다.
+
+#+BEGIN_SRC c
+  /* 필드별 구분자 지원 */
+  static char **manysep = NULL;   /* 구분자 목록 */
+  static int  ms_capa = 0;        /* 구분자 목록 할당 크기 */
+  static int  ms_nmemb = 0;       /* 구분자 개수 */
+  static int  *ms_eachsz = NULL;  /* 각각의 구분자 할당 크기 */
+  static int  *ms_eachlen = NULL; /* 각각의 구분자 길이 */
+#+END_SRC
+
+필드별 구분자를 지원하기 위해서, =split= 과 비슷한 일을 하는 함수를
+만들 것이다. 필드별로 다른 구분자를 적용하는 =splitf= 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* splitf: 입력 줄을 필드마다 다른 구분자로 파싱한다. */
+  static int splitf(void)
+  {
+      char *p, **newf;
+      char *sepp;                 /* 입력 줄 내의 구분자를 가리킴 */
+      int sepc;                   /* sepp[0] 임시 저장소 */
+      char *fieldsep;             /* 현재 구분자 */
+      int seplen;                 /* 현재 구분자의 길이 */
+    
+      nfield = 0;
+      if (line[0] == '\0')
+          return 0;
+      strcpy(sline, line);
+      p = sline;
+      if (maxfield < ms_nmemb+1) {
+          maxfield = ms_nmemb+1;
+          newf = (char **) realloc(field,
+                      maxfield * (sizeof field[0]));
+          if (newf == NULL)
+              return NOMEM;
+          field = newf;
+      }
+      for (int i = 0; i < ms_nmemb; i++) {
+          fieldsep = manysep[i];
+          seplen = ms_eachlen[i];
+          if (!fieldsep) {
+              fieldsep = defaultsep;
+              seplen = 1;
+          }
+          if (*p == '"')
+              sepp = advquoted(++p, fieldsep); /* 시작하는 따옴표는 넘긴다 */
+          else
+              sepp = strstr(p, fieldsep);
+          sepc = sepp[0];
+          sepp[0] = '\0';         /* 필드를 자른다. */
+          field[nfield++] = p;
+          p = sepp + seplen;
+          if (sepc != fieldsep[0] ||
+              strncmp(sepp+1, fieldsep+1, seplen-1) != 0)
+              break;
+      }
+      if (*p != '\0') {
+          field[nfield++] = p;
+      }
+      return nfield;
+  }
+#+END_SRC
+
+논리 구조는 아주 비슷하지만 코드 구석 구석이 조금씩 다르다. 필드
+개수를 알 수 없었던 임의 문자열 구분자 형식과는 달리, 이제는 필드
+개수가 반드시 (구분자 개수 + 1)개를 넘지 않을 것임을 알고 있다. 따라서
+메모리를 단 한 번 체크하고, 많아봐야 한 번 확장한다. 또한 문장 끝을
+만날 때 까지 무작정 분리하는 것이 아니라 구분자 개수만큼만 분리한다.
+
+각종 예외처리 탓에 코드가 세로로 길어진 것은 흠이지만, C언어로
+프로그램을 쓸 때 종종 생기는 일이므로 어쩔 수가 없다.
+
+이제 =fsep= 을 구현한다.
+
+#+BEGIN_SRC c
+  int fsep(int idx, char *sep)
+  {
+      int newsz, newnmemb, newsepsz;
+      char **newms, *newf;
+      int  *new_eachsz, *new_eachlen;
+
+      newnmemb = idx+1;
+      if (ms_nmemb < newnmemb)
+          ms_nmemb = newnmemb;
+      /* manysep의 블록이 부족할 경우 확장 */
+      if (ms_capa < newnmemb) {  
+          newsz = (ms_capa? ms_capa * INCREASE_FACTOR : newnmemb);
+          newms = (char **) realloc (manysep,
+                      newsz * (sizeof manysep[0]));
+          new_eachsz = (int *) realloc(ms_eachsz,
+                            newsz * (sizeof ms_eachsz[0]));
+          new_eachlen = (int *) realloc(ms_eachlen,
+                             newsz * (sizeof ms_eachlen[0]));
+          if (newms == NULL || new_eachsz == NULL || new_eachlen == NULL) {
+              free(newms);
+              free(new_eachsz);
+              free(new_eachlen);
+              return 0;
+          }
+          for (int i = ms_capa; i < newsz; i++) {
+              newms[i] = NULL;
+              new_eachsz[i] = 0;
+              new_eachlen[i] = 0;
+          }
+          manysep = newms;
+          ms_eachsz = new_eachsz;
+          ms_eachlen = new_eachlen;
+          ms_capa = newsz;
+      }
+      /* manysep[idx]의 메모리 블록이 부족할 경우 확장 */
+      newsepsz = strlen(sep)+1; 
+      if (ms_eachsz[idx] < newsepsz) { 
+          newsepsz = newsepsz;
+          newf = (char *) realloc (manysep[idx],
+                      newsepsz * (sizeof manysep[idx][0]));
+          if (newf == NULL)
+              return 0;
+          ms_eachsz[idx] = newsepsz;
+          manysep[idx] = newf;
+      }
+      strcpy(manysep[idx], sep);
+      ms_eachlen[idx] = newsepsz-1;
+      return 1;
+  }
+#+END_SRC
+
+메모리 관리 코드 덕분에 코드 길이가 매우 길어졌다.
+
+=resetsep= 함수를 구현하기에 앞서, 구분자 유형을 나타내는 전역 변수를
+만든다.
+
+#+BEGIN_SRC c
+  /* 구분자 관련 */
+  static enum septype
+      _septype = DEFAULT_SEP;     /* 현재 구분자 유형 */
+#+END_SRC
+
+이 변수의 값에 따라 =split= 함수가 서로 다른 동작을 수행하도록 하는
+것이 좋겠다. 기존의 =split= 함수의 이름을 =splits= 로 이름을 바꾸고,
+=_septype= 의 값에 따라 함수를 선택해주는 =split= 함수를 만들자. 이는
+=csvfield= 와 =csvnfield= 함수에서 중복 수정을 막기 위해서이다.
+
+#+BEGIN_SRC c
+  /* split: 입력 줄을 필드로 구분한다. */
+  static int split(void)
+  {
+      int ret;
+      switch (_septype) {
+      case DEFAULT_SEP:
+          ssep(defaultsep);
+          ret = splits();
+          break;
+      case STRING_SEP:
+          ret = splits();
+          break;
+      case FIELD_SEP:
+          ret = splitf();
+          break;
+      case REGEX_SEP:
+          /* fall-through */
+      default:
+          ret = 0;
+      }
+      return ret;
+  }
+#+END_SRC
+
+드디어 =resetsep= 함수를 구현한다.
+
+#+BEGIN_SRC c
+  /* clearfsep: 필드 구분자를 초기화한다. */
+  static void clearfsep()
+  {
+      int i;
+      for (i = 0; i < ms_capa; i++)
+          ms_eachlen[i] = 0;
+      ms_nmemb = 0;
+  }
+
+  /* resetsep: 구분자 유형을 변경하고 적절한 초기화를 수행한다. */
+  void resetsep(enum septype type)
+  {
+      /* 임의 문자열 구분자 유형에 대한 초기화 작업 */
+      ssep(defaultsep);
+      /* 필드별 구분자 유형에 대한 초기화 작업 */
+      clearfsep();
+    
+      _septype = type;
+  }
+#+END_SRC
+
+또한, =ssep=, =fsep= 함수가 명세대로 구분자 타입도 변경하도록 지정한다.
+
+#+BEGIN_SRC c
+  int ssep(char *sep)
+  {
+      int len;
+      /* 구분자 유형을 변경한다. */
+      if (_septype != DEFAULT_SEP || _septype != STRING_SEP)
+          _septype = STRING_SEP;
+      ...
+#+END_SRC
+
+#+BEGIN_SRC c
+  int fsep(int idx, char *sep)
+  {
+      int newsz, newnmemb, newsepsz;
+      char **newms, *newf;
+      int  *new_eachsz, *new_eachlen;
+      if (_septype != FIELD_SEP) {
+          clearfsep();
+          _septype = FIELD_SEP;
+      }
+      ...
+#+END_SRC
+
+*시험 주행*
+
+다음과 같은 데이터를 준비한다.
+
+#+BEGIN_EXAMPLE
+  저자. 출판년도. "챕터명" in 단행본명, 페이지. 출판지: 출판사.
+  Hemingway, Ernest Miller. 1952. "Map of Cuba." in The Old Man and the
+  Sea, 100. NY: Charles Scribner's son.
+#+END_EXAMPLE
+
+구분자는 앞에서부터 순서대로 배열로 표기하면 이렇다.
+
+#+BEGIN_SRC c
+  {". ",
+   ". \"",
+   "\" in ",
+   ", ",
+   ". ",
+   ": ",
+   "."}
+#+END_SRC
+
+=csvtest.c= 를 수정한다.
+
+#+BEGIN_SRC c
+  #include <stdio.h>
+  #include "csv.h"
+
+  int main(void)
+  {
+      int i;
+      char *line;
+      char *seps[] = {". ", ". \"",
+                      "\" in ", ", ",
+                      ". ", ": ", "."};
+      int nseps = (sizeof seps) / (sizeof seps[0]);
+
+      resetsep(FIELD_SEP);
+      for (int i = 0; i < nseps; i++) {
+          fsep(i, seps[i]);
+      }
+      while ((line = csvgetline(stdin)) != NULL) {
+          printf("line = '%s'\n", line);
+          for (i = 0; i < csvnfield(); i++)
+              printf("field[%d] = '%s'\n", i, csvfield(i));
+      }
+      return 0;
+  }
+#+END_SRC
+
+*수행 결과*
+
+#+BEGIN_EXAMPLE
+  CMD> csvtest.exe < input.txt
+  line = '저자. 출판년도. "챕터명" in 단행본명, 페이지. 출판지: 출판사.'
+  field[0] = '저자'
+  field[1] = '출판년도'
+  field[2] = '챕터명'
+  field[3] = '단행본명'
+  field[4] = '페이지'
+  field[5] = '출판지'
+  field[6] = '출판사'
+  line = 'Hemingway, Ernest Miller. 1952. "Map of Cuba." in The Old Man and the Sea, 100. NY: Charles Scribner's son.'
+  field[0] = 'Hemingway, Ernest Miller'
+  field[1] = '1952'
+  field[2] = 'Map of Cuba.'
+  field[3] = 'The Old Man and the Sea'
+  field[4] = '100'
+  field[5] = 'NY'
+  field[6] = 'Charles Scribner's son'
+#+END_EXAMPLE
+
+*평가*
+
+동작은 잘 되지만, 인터페이스가 살짝 아쉬운 면이 있다. =fsep= 은
+사용자의 실수로 인해 미정의 동작 수행 가능성을 내포하고 있다. 물론
+=fsep= 이 부자연스러운 것은 아니다. 반드시 필요한 인터페이스이다. 다만
+코드에 시간을 더 들인다면, 구분자의 배열을 받아서 자동으로 구분자들이
+설정되도록 구현할 수 있을 것 같다. 더불어, 전역변수가 너무
+많다. 프로젝트의 복잡성이 증가해 전역 변수가 너무 많아지면, 컨텍스트
+객체를 도입하는 것도 생각해보아야 할 것 같다.
+
+*** 연습 4-3.
+
+앞에서는 C 언어가 제공하는 정적 초기화를 이용한 일회성 스위치 방식을
+선택했다. 즉, 만약 포인터가 NULL 상태로 들ㅇ오면 초기화를 수행한다. 그
+외 택할 수 있는 방식은 명시적인 초기화 함수를 호출하게 하고, (아마도)
+그 초기화 함수에서 배열의 초기 크기까지 정하는 것이다. 위 두 방식의
+장점을 결합한 프로그램을 구현하라. 그 프로그램에서 reset 함수의 역할은
+무엇인가?
+
+
