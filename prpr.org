@@ -6421,19 +6421,53 @@ C++ 로 구현하면서 바뀌는 점
 
 *풀이*
  
-원칙대로라면 두 가지 버전의 인덱스 연산자를 오버로딩해야
-한다. 한가지는 읽기 전용의 =const= 버전이고, 다른 하나는 읽고 쓸 수
-있는 버전이다. 그러나 여기서 만든 Csv 라이브러리는 =csv= 를 읽어
-필드값을 가져올 뿐 다른 일은 하지 않기 때문에 그런 복잡한 원칙을
-고수할 이유는 없다. 따라서 필드값의 복사본을 넘겨주되 굳이 =const= 로
-선언하지는 않는다.
+원칙대로 두 가지 버전의 인덱스 연산자를 오버로딩해야 한다. 한가지는
+non-=const= 버전이고, 다른 한 가지는 =const= 버전이다. 우리는 두
+연산자 모두 대입을 허용하지 않게 하려고 한다. 그렇다면 두 버전 모두
+사본을 반환하게 하면 된다.
 
 #+BEGIN_SRC cpp
   string Csv::operator[](int k)
   {
       return field[k];
   }
+
+  string Csv::operator[](int k) const
+  {
+      return field[k];
+  }
 #+END_SRC
+
+*시험 주행*
+
+=Csvtest main= 함수를 바꾼다. =getfield= 대신 인덱스 연산자를 쓰도록.
+
+#+BEGIN_SRC c
+  int main()
+  {
+      string line;
+      Csv csv;
+      while(csv.getline(line) != 0) {
+          cout << "line = '" << line << "'\n";
+          for (int i = 0; i < csv.getnfield(); i++)
+              cout << "field [" << i << "] = '"
+                   << csv[i] << "'\n";
+      }
+      return 0;
+  }
+#+END_SRC
+
+*수행 결과*
+
+#+BEGIN_EXAMPLE
+  CMD> csvtest.exe < input.txt
+  line = '"LU",86.25,"11/4/1998","2:19PM",+4.0625'
+  field [0] = 'LU'
+  field [1] = '86.25,"11'
+  field [2] = '11/4/1998'
+  field [3] = '2:19PM'
+  field [4] = '+4.0625'
+#+END_EXAMPLE
 
 *** 연습 4-6.
 
@@ -6447,3 +6481,7 @@ CSV 라이브러리를 자바 언어로 작성하고...
 
 C++ 버전 CSV 코드를 STL 반복자(iterator)를 활용하여 재작성하라.
 
+*=istream_iterator<char>= 적용하기*
+
+라인을 읽을 때 =istream= 대신 =istream_iterator<char>= 을 사용하도록
+바꾼다.

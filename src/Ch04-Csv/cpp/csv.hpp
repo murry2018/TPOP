@@ -15,6 +15,8 @@ public:
     int getline(std::string&);
     std::string getfield(int n);
     int getnfield() const { return nfield; }
+    std::string operator[](int k) { return field[k]; }
+    std::string operator[](int k) const { return field[k]; }
 
 private:
     std::istream& fin;              // 입력 파일 포인터
