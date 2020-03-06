@@ -78,7 +78,7 @@ int Csv::advplain(const string& s, string& fld, int i)
     j = s.find_first_of(fieldsep, i); // 구분자를 찾음
     if (j > s.length())               // 아무것도 찾지 못함
         j = s.length();
-    fld = string(s, i, j-1);
+    fld = string(s, i, j-i);
     return j;
 }
 
