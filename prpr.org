@@ -6249,7 +6249,7 @@ C++ 로 구현하면서 바뀌는 점
       Csv(std::istream& fin = std::cin, std::string sep = ",") :
           fin(fin), fieldsep(sep) {}
 
-      int getlinne(std::string&);
+      int getline(std::string&);
       std::string getfield(int n);
       int getnfield() const { return nfield; }
 
@@ -6321,7 +6321,7 @@ C++ 로 구현하면서 바뀌는 점
           if (i < line.length() && line[i] == '"')
               j = advquoted(line, fld, ++i); // 따옴표를 지나침
           else
-              j = advplain(line, fld, ii);
+              j = advplain(line, fld, i);
           if (nfield >= field.size()) // ?
               field.push_back(fld);
           nfield++;
@@ -6382,7 +6382,7 @@ C++ 로 구현하면서 바뀌는 점
 
 #+BEGIN_SRC cpp
   // getfield: n번째 필드를 리턴함
-  string csv::getfield(int n)
+  string Csv::getfield(int n)
   {
       if (n < 0 || n >= nfield)
           return "";
@@ -6402,7 +6402,7 @@ C++ 로 구현하면서 바뀌는 점
       while(csv.getline(line) != 0) {
           cout << "line = '" << line << "'\n";
           for (int i = 0; i < csv.getnfield(); i++)
-              cout << "field" << i << "] = '"
+              cout << "field [" << i << "] = '"
                    << csv.getfield(i) << "'\n";
       }
       return 0;
