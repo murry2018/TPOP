@@ -6230,4 +6230,220 @@ csv를 생성하는 것은 비교적 쉬운 일이다. =csvgen= 이라는 이름
 
 ** C++ 구현
 
+C++ 로 구현하면서 바뀌는 점
+
+- 문자열을 표현하는 데 =char[]= 대신 =std::string= 을 쓰게 된다.
+- 필드를 표현하는 데 =char[][]= 대신 =std::vector<std::string>= 을
+  쓰게 된다.
+- csv 내부 표현을 더이상 전역변수에 바인드하지 않는다. 그 대신, 클래스
+  인스턴스에 바인딩한다.
+
+
+*클래스 인터페이스*
+
+#+BEGIN_SRC cpp
+  // 콤마 구분값(csv)을 읽고 파싱한다.
+  class Csv {
+      // 입력 예시: "LU",86.25,"11/4/1998","2:19PM",+4.0625
+  public:
+      Csv(std::istream& fin = std::cin, std::string sep = ",") :
+          fin(fin), fieldsep(sep) {}
+
+      int getlinne(std::string&);
+      std::string getfield(int n);
+      int getnfield() const { return nfield; }
+
+  private:
+      std::istream& fin;              // 입력 파일 포인터
+      std::string line;               // 입력 줄
+      std::vector<std::string> field; // 필드 문자열
+      int nfield;                     // 필드 개수
+      std::string fieldsep;           // 구분자
+
+      int split();
+      int endofline(char);
+      int advplain(const std::string& line, std::string& fld, int);
+      int advquoted(const std::string& line, std::string& fld, int);
+  };
+#+END_SRC
+
+*구현*
+
+=Csv::getline= 함수의 리턴값은 에러 보고에 사용된다.
+
+#+BEGIN_SRC cpp
+  // getline: 한 줄을 입력받고 필요에 따라 늘린다.
+  int Csv::getline(string& str)
+  {
+      char c;
+      for (line = ""; fin.get(c) && !endofline(c); )
+          line += c;
+      split();
+      str = line;
+      return !fin.eof();
+  }
+#+END_SRC
+
+=endofline= 함수 역시 조금 바뀐다. =FILE*= 객체 대신 =istream= 객체를
+사용하기 때문에, =ungetc= 함수를 사용할 수 없기 때문이다.
+
+#+BEGIN_SRC cpp
+  // endofline: \r, \n, \r\n, EOF를 확인하고 제거함
+  int Csv::endofline(char c)
+  {
+      int eol;
+
+      eol = (c=='\r' || c=='\n');
+      if (c == '\r') {
+          fin.get(c);
+          if (!fin.eof() && c != '\n')
+              fin.putback(c);     // 너무 많이 읽었음
+      }
+      return eol;
+  }
+#+END_SRC
+
+=split= 함수 역시, alloc/realloc 루틴이 사라졌다는 점이 눈에 띈다.
+
+#+BEGIN_SRC cpp
+  // split: line을 필드로 나눔
+  int Csv::split()
+  {
+      string fld;
+      int i, j;
+
+      nfield = 0;
+      if (line.length() == 0)
+          return 0;
+      i = 0;
+
+      do {
+          if (i < line.length() && line[i] == '"')
+              j = advquoted(line, fld, ++i); // 따옴표를 지나침
+          else
+              j = advplain(line, fld, ii);
+          if (nfield >= field.size()) // ?
+              field.push_back(fld);
+          nfield++;
+          i = j + 1;              // i를 컴마의 다음 오프셋으로
+      } while (j < line.length());
+      return nfield;
+  }
+#+END_SRC
+
+=split= 함수와 =advquoted= 함수 모두 =strcspn= 에 의존했는데,
+=std::string= 에는 =strcspn= 함수를 적용할 수 없기 때문에 모두 수정해
+주어야 한다.
+
+=strcspn= 대신, =std::string= 표준 함수인 =find_first_of(delim, k)=
+함수를 사용한다. 이 함수는 대상 문자열의 =k= 번째 오프셋부터 나타나는
+=delim= 안의 문자를 찾는다. 찾지 못하면 대상 문자열의 끝을 넘긴
+인덱스를 리턴한다.
+
+#+BEGIN_SRC cpp
+  // advquoted: 따옴표를 축약하거나 생략하고, 다음 구분자의 위치를 리턴함.
+  int Csv::advquoted(const string& s, string& fld, int i)
+  {
+      int j;
+
+      fld = "";
+      for (j = i; j < s.length(); j++) {
+          if (s[j] == '"' && s[++j] != '"') {
+              int k = s.find_first_of(fieldsep, j);
+              if (k > s.length()) // 구분자를 찾지 못함
+                  k = s.length();
+              for (k -= j; k-- > 0; )
+                  fld += s[j++];
+              break;
+          }
+          fld += s[j];
+      }
+      return j;
+  }
+#+END_SRC
+
+=advplain= 은 구분자를 찾는 역할을 수행한다.
+
+#+BEGIN_SRC cpp
+  // advplain: 다음 구분자의 위치를 리턴
+  int Csv::advplain(const string& s, string& fld, int i)
+  {
+      int j;
+      j = s.find_first_of(fieldsep, i); // 구분자를 찾음
+      if (j > s.length())               // 아무것도 찾지 못함
+          j = s.length();
+      fld = string(s, i, j-1);
+      return j;
+  }
+#+END_SRC
+
+마지막으로, =Csv::getfield= 함수를 만든다. =Csv::getnfield= 는 아주
+짧기 때문에 클래스 정의에 포함되어있다.
+
+#+BEGIN_SRC cpp
+  // getfield: n번째 필드를 리턴함
+  string csv::getfield(int n)
+  {
+      if (n < 0 || n >= nfield)
+          return "";
+      else
+          return field[n];
+  }
+#+END_SRC
+
+테스트 프로그램은 C 프로그램을 아주 조금 바꾼 것이다.
+
+#+BEGIN_SRC cpp
+  // Csvtest main: Csv 클래스를 테스트함
+  int main()
+  {
+      string line;
+      Csv csv;
+      while(csv.getline(line) != 0) {
+          cout << "line = '" << line << "'\n";
+          for (int i = 0; i < csv.getnfield(); i++)
+              cout << "field" << i << "] = '"
+                   << csv.getfield(i) << "'\n";
+      }
+      return 0;
+  }
+#+END_SRC
+
+문자열을 매번 복사하기 때문에, 저자에 따르면 "C++ 버전은 C보다
+40퍼센트에서 네 배까지도 느려진다"고 한다.
+
+** 연습
+
+*** 연습 4-5.
+
+=operator[]= 연산자를 오버로드하여 =csv[i]= 와 같은 방식으로 필드에
+접근할 수 있게 C++ 버전을 다듬어 보라.
+
+*풀이*
+ 
+원칙대로라면 두 가지 버전의 인덱스 연산자를 오버로딩해야
+한다. 한가지는 읽기 전용의 =const= 버전이고, 다른 하나는 읽고 쓸 수
+있는 버전이다. 그러나 여기서 만든 Csv 라이브러리는 =csv= 를 읽어
+필드값을 가져올 뿐 다른 일은 하지 않기 때문에 그런 복잡한 원칙을
+고수할 이유는 없다. 따라서 필드값의 복사본을 넘겨주되 굳이 =const= 로
+선언하지는 않는다.
+
+#+BEGIN_SRC cpp
+  string Csv::operator[](int k)
+  {
+      return field[k];
+  }
+#+END_SRC
+
+*** 연습 4-6.
+
+CSV 라이브러리를 자바 언어로 작성하고...
+
+*포기*
+
+귀찮음
+
+*** 연습 4-7.
+
+C++ 버전 CSV 코드를 STL 반복자(iterator)를 활용하여 재작성하라.
 
