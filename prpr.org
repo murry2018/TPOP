@@ -7009,5 +7009,355 @@ abort는 디버거로 분석 작업을 할 수 있도록 프로그램을 비정�
 있게 로그 정보를 기록하는 것이다. 어떤 방법을 택하든, 할당 공간의
 시작과 끝에 표시를 해서 양쪽으로 넘치는 상황을 포착할 수 있어야 한다.
 
+*인터페이스*
 
+=dmemory= 라는 이름으로 라이브러리를 제작한다. 우리가 앞으로
+사용자에게 제공할 인터페이스이다. =malloc= 함수를 대체하는 =dmalloc=,
+=free= 함수를 대체하는 =dfree= 를 제공한다. 이 함수들은 off-by-one
+에러를 추적하거나, dangling-pointer 에러를 추적하는 데 용이할 것이다.
+추가 디버깅을 위해 메모리 침범이 있었는지 확인하는 함수와 전체 할당
+메모리를 출력하는 함수도 제공한다.
 
+#+BEGIN_SRC c
+  #if !defined ( GUARD__DMEMORY_H )
+  #define GUARD__DMEMORY_H
+
+   #if !defined ( __DEBUG_MODE )
+
+   #define dmalloc malloc
+   #define dfree free
+
+   #else
+   #include <stdio.h>
+
+   /* dmalloc: 디버그를 위한 할당 함수. 메모리 넘침이 감지되면
+    ,* 에러메시지를 출력하고 종료한다. */
+   extern void *dmalloc(size_t);
+   /* dfree: 디버그를 위한 해제 함수. dmalloc으로 할당되지 않았거나
+    ,* 메모리가 훼손된 경우 에러메시지를 출력하고 종료한다. */
+   extern void dfree(void *);
+   /* dmem_isclean: dmalloc으로 할당된 메모리에 메모리 침범이 있는지
+    ,* 확인하고 무결성이 확인되면 1, 그렇지 않으면 0을 반환한다. */
+   extern int dmem_isclean(void *addr);
+   /* dmem_dump: dmalloc으로 할당된 모든 메모리에 대해 무결성을
+    ,* 확인하고 무결하다면 내용을 출력한다. 그렇지 않다면 메모리가
+    ,* 훼손되었다는 메시지를 출력한다. 메모리 값은 16진수와 아스키 문자로
+    ,* 각각 출력되고, 메모리 주소도 16진수로 출력된다. */
+   extern void dmem_dump(FILE* fout);
+
+   #endif
+
+  #endif
+#+END_SRC
+
+이런 기능들은 사용자가 명시적으로 =__DEBUG_MODE= 매크로 상수를
+선언해야만 동작하도록 만든다. =dmalloc= 과 =dfree= 함수가 기능을
+제공하면서 추가적인 시스템 부하가 발생하기 때문이다.
+
+*자료 구조*
+
+=malloc= 래퍼 함수로 할당된 메모리 공간들을 전수 조사 하기 위해서는
+메모리 블록들을 관리하는 자료 구조가 필요하다. 해시 테이블로 임의
+접근이 가능하게 만드는 것도 좋지만, 구현 상의 편의를 위해 리스트로
+할당된 블럭을 관리하기로 한다. =dmemory.c= 내에 자료구조 라이브러리를
+작성하자. 링크드 리스트를 선언한다.
+
+#+BEGIN_SRC c
+  typedef unsigned char Byte;
+
+  /* Dmem: dmalloc 할당 블록을 관리하는 리스트 노드 */
+  typedef struct Dmem Dmem;
+  struct Dmem {
+      void *addr;                 /* 사용자에게 주는 메모리 */
+      Byte *real;                 /* 실제 메모리 위치 */
+      size_t size;                /* 할당된 실제 크기 */
+      Dmem *prev, *next;          /* 이전, 다음 노드 */
+  };
+#+END_SRC
+
+리스트 뒤에 쉽게 추가하기 위하여, 리스트의 첫 노드와 끝 노드에 빠르게
+접근할 수 있는 지름길을 만들어둔다.
+
+#+BEGIN_SRC c
+  /* memlist:메모리 블록을 관리하는 리스트 */
+  static Dmem *memlist = NULL;
+  /* memtail: memlist의 마지막 노드 */
+  static Dmem *memtail = NULL;
+#+END_SRC
+
+리스트 노드를 생성하는 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* makemem: 새 Dmem 객체 생성. */
+  static Dmem *makemem(void *addr, Byte *real, size_t size)
+  {
+      Dmem *newm = (Dmem *) malloc(sizeof(Dmem));
+      if (newm) {
+          newm->addr = addr;
+          newm->real = real;
+          newm->size = size;
+          newm->prev = newm->next = NULL;
+      }
+      return newm;
+  }
+#+END_SRC
+
+리스트에 원소를 추가하는 add 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* add: memlist에 Dmem 객체 추가. 실패시 NULL */
+  static Dmem *add(Dmem *mem)
+  {
+      if (!mem)
+          return NULL;
+      if (memlist == NULL) {
+          assert(memtail == NULL);
+          memlist = mem;
+          memtail = mem;
+      } else {
+          assert(memtail != NULL);
+          mem->prev = memtail;
+          memtail->next = mem;
+          memtail = mem;
+      }
+      return mem;
+  }
+#+END_SRC
+
+자료구조에 버그가 생기면 고치기가 매우 어렵기 때문에, 개발을 끝낼 때
+까지 단정문들을 남겨둘 것이다. 빈 리스트라면 =memlist= 와 =memtail=
+모두 =NULL= 이어야 하고, 리스트에 원소가 하나라도 있다면 =memlist= 와
+=memtail= 모두 =NULL= 이 아니어야 한다는 전제로 개발한다.
+
+리스트에서 메모리 블록 노드를 찾는 =find= 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* find: memlist에서 주소가 addr인 Dmem 객체를 찾아내 그 포인터를
+   ,* 반환한다. 실패시 NULL */
+  static Dmem *find(void *addr)
+  {
+      Dmem *p;
+      for (p = memlist; p != NULL; p = p->next)
+          if (p->addr == addr)
+              break;
+      return p;
+  }
+#+END_SRC
+
+이 함수의 결과를 가지고 리스트 원소를 지울 수 있도록 =del= 함수를 작성한다.
+
+#+BEGIN_SRC c
+  /* del: memlist에서 Dmem 객체를 삭제함. 단, 실제 객체(mem->real)는
+   ,* 해제되지 않음. 실패시 0. */
+  static int del(Dmem *mem)
+  {
+      if (!mem || !memlist)
+          return 0;
+      /* 리스트에서 노드를 떼어낸다 */
+      if (mem->prev)
+          mem->prev->next = mem->next;
+      if (mem->next)
+          mem->next->prev = mem->prev;
+    
+      if (memlist == mem)         /* 첫 노드라면 */
+          memlist = memlist->next;
+      if (memtail == mem)         /* 마지막 노드라면 */
+          memtail = memtail->prev;
+      free(mem);
+      return 1;
+  }
+#+END_SRC
+
+4장에서 다룬 인터페이스 설계 원칙 "자원을 결자해지하라"는 말을 따라서,
+실제 객체는 더 상위의 함수들이 해제하도록 할 것이다. =makemem= 으로
+객체를 생성할 때도 이미 리스트 라이브러리 외부에서 자원이 할당되어
+들어옴을 가정했기 때문이다.
+
+메모리를 전수조사할 때 도움이 될 수 있도록 메모리 블록을 모두 순회하는
+함수를 만든다.
+
+#+BEGIN_SRC c
+  /* map: memlist의 원소를 하나씩 순회하며 fn을 적용한다. arg는 fn의 두
+   ,* 번째 인자로 들어간다. */
+  static void map(void (*fn)(Dmem *mem, void *arg),
+                  void *arg)
+  {
+      Dmem *p;
+      for (p = memlist; p != NULL; p = p->next)
+          (*fn)(p, arg);
+  }
+#+END_SRC
+
+*테스트 밑작업*
+
+자료구조 라이브러리에 의한 버그를 미연에 방지하기 위해, 테스트
+함수들을 만들 것이다. 라이브러리는 원래 main 함수를 가져선 안되기
+때문에 컴파일 과정에서 이를 제어할 수 있도록 매크로 조건을 추가한다.
+
+#+BEGIN_SRC c
+  #if defined ( __MEMLIST_TEST_MAIN )
+
+  /* 이 곳에 테스트 함수들이 들어간다. */
+
+  #endif
+#+END_SRC
+
+컴파일 할 때 메모리 블록 리스트에 대한 테스트를 수행하려면 다음과 같이
+옵션을 주면 된다.
+
+#+BEGIN_EXAMPLE
+  CMD> gcc -D__MEMLIST_TEST_MAIN dmemory.c -o dmemory.exe
+#+END_EXAMPLE
+
+우선 테스트를 용이하게 하기 위해 =Dmem= 객체 출력 함수를 만든다.
+
+#+BEGIN_SRC c
+  /* tprintfn: mem을 받아 인자로 주어진 포맷 문자열로 출력한다. 포맷
+   ,* 문자열에는 mem->addr과 mem->size가 차례로 대응된다. */
+  static void tprintfn(Dmem *mem, void *arg)
+  {
+      char *fmt = (char *)arg;
+      printf(fmt, mem->addr, mem->size);
+  }
+#+END_SRC
+
+이 함수가 제대로 동작하는지 확인해보자.
+
+#+BEGIN_SRC c
+  /* makemem 함수와 tprintfn 함수를 테스트한다. */
+  static void test_printfn()
+  {
+      Dmem *mem;
+      mem = makemem((void *)0x1234, (Byte *)0x1235, 42);
+      if (!mem) {
+          perror("test_printfn");
+      }
+      tprintfn(mem, "%p: size %d\n");
+  }
+#+END_SRC
+
+*수행 결과*
+
+테스트용 main 함수를 작성한다.
+
+#+BEGIN_SRC c
+  int main()
+  {
+      test_memlist();
+  }
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  0x1234: size 42
+#+END_EXAMPLE
+
+정상적인 출력이 나타난 모습이다. 이제 이 함수를 이용해 테스트를 수행할
+수 있다.
+
+*테스트 작성*
+
+메모리 블록 리스트를 테스트 하기 위한 함수를 작성한다.
+
+#+BEGIN_SRC c
+  /* test_memlist: 리스트 함수들을 테스트한다 */
+  static void test_memlist()
+  {
+      Dmem *head2, *tail2, *res;
+      Dmem *phead, *ptail;
+      char *fmt = "%p: size %d\n";
+      puts("=== Adding Elements ===");
+      if (!(  add(makemem((void *)0x1111, (Byte *)0x1112, 42)) &&
+              add(makemem((void *)0x1212, (Byte *)0x1213, 72)) &&
+              add(makemem((void *)0x1234, (Byte *)0x1235, 89)) &&
+              add(makemem((void *)0x6974, (Byte *)0x6975, 69)) &&
+              add(makemem((void *)0x7469, (Byte *)0x7469, 74)) )) {
+          perror("in test_memlist: adding elements");
+          abort();
+      }
+      assert(memlist != NULL);
+      assert(memtail != NULL);
+      map(&tprintfn, fmt);
+
+      puts("=== Finding Second Element ===");
+      head2 = find((void *)0x1212);
+      assert(head2 != NULL);
+      assert(head2->addr == (void *)0x1212);
+      tprintfn(head2, fmt);
+
+      puts("=== Finding Second-Last Element ===");
+      tail2 = find((void *)0x6974);
+      assert(tail2 != NULL);
+      assert(tail2->addr == (void *)0x6974);
+      tprintfn(tail2, fmt);
+
+      puts("=== Finding Non-existing Elemnt ===");
+      res = find((void *)0xABCD);
+      assert(res == NULL);
+      if (!res)
+          puts("Cannot find 0xABCD!");
+
+      phead = memlist;
+      ptail = memtail;
+    
+      puts("=== Deleting Second Element ===");
+      del(head2); head2 = NULL;
+      assert(memlist == phead);   /* 헤드 노드에 영향 x */
+      assert(memtail == ptail);   /* 테일 노드에 영향 x */
+      map(&tprintfn, fmt);
+
+      puts("=== Deleting Second-last Element ===");
+      del(tail2); tail2 = NULL;
+      assert(memlist == phead);
+      assert(memtail == ptail);
+      map(&tprintfn, fmt);
+
+      puts("=== Deleting Head Element ===");
+      del(phead); phead = NULL;
+      map(&tprintfn, fmt);
+
+      puts("=== Deleting Tail Element ===");
+      del(ptail); ptail = NULL;
+      map(&tprintfn, fmt);
+
+      assert(memlist == memtail);       /* 원소가 0x1234 하나만 남음 */
+
+      puts("=== Deleting Last Element ===");
+      del(memlist);
+      assert(memlist == NULL);
+      assert(memtail == NULL);
+  }
+#+END_SRC
+
+*수행 결과*
+
+#+BEGIN_EXAMPLE
+  === Adding Elements ===
+  0x1111: size 42
+  0x1212: size 72
+  0x1234: size 89
+  0x6974: size 69
+  0x7469: size 74
+  === Finding Second Element ===
+  0x1212: size 72
+  === Finding Second-Last Element ===
+  0x6974: size 69
+  === Finding Non-existing Elemnt ===
+  Cannot find 0xABCD!
+  === Deleting Second Element ===
+  0x1111: size 42
+  0x1234: size 89
+  0x6974: size 69
+  0x7469: size 74
+  === Deleting Second-last Element ===
+  0x1111: size 42
+  0x1234: size 89
+  0x7469: size 74
+  === Deleting Head Element ===
+  0x1234: size 89
+  0x7469: size 74
+  === Deleting Tail Element ===
+  0x1234: size 89
+  === Deleting Last Element ===
+#+END_EXAMPLE
+
+어떤 assertion에서도 걸리지 않았고, 제대로 된 출력이 나타난 모습이다.
