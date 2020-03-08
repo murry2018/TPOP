@@ -9,6 +9,37 @@
 
 const Byte CHECKBYTE = 0xfe;
 
+static int isclean(Dmem *mem);
+static char *spaces(int n);
+static void printmem(Dmem *mem, void *arg);
+
+/* dmalloc: 디버그를 위한 할당 함수. 메모리 무결성이 깨지면
+ * 에러메시지를 출력하고 종료한다. */
+void *dmalloc(size_t n)
+{
+    const int size = n+2;       /* 검증 바이트를 포함한 크기 */
+    Byte *real;
+    void *addr = NULL;
+    Dmem *mem;
+    if (!every(&isclean)) {     /* 메모리 무결성 파괴 감지 */
+        map(&printmem, stderr);
+        fputs("Detected broken memory integrity", stderr);
+        abort();
+    }
+    real = (Byte *)malloc(size);
+    if (!real)                  /* 메모리 블록 할당 실패 */
+        return NULL;
+    real[0] = CHECKBYTE;
+    real[size-1] = CHECKBYTE;
+    addr = (void *)(&real[1]);
+    mem = add(makemem(addr, real, size));
+    if (!mem) {                 /* Dmem 객체 할당 실패 */
+        free(real);
+        return NULL;
+    }
+    return addr;
+}
+
 /* isclean: mem 객체에 할당된 메모리의 무결성을 확인한다. 메모리
  * 바깥에 덮어쓴 내용이 감지되거나 mem이 NULL인 경우 0을 반환한다.*/
 static int isclean(Dmem *mem)
@@ -20,7 +51,8 @@ static int isclean(Dmem *mem)
 }
 
 /* spaces: n(<128)개의 space가 들은 문자열을 반환한다. */
-static char *spaces(int n) {
+static char *spaces(int n)
+{
     static int before_n = 0;
     static char buf[128] = "";
     if (before_n != n) {
