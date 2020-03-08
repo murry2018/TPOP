@@ -13,6 +13,19 @@ static int isclean(Dmem *mem);
 static char *spaces(int n);
 static void printmem(Dmem *mem, void *arg);
 
+/* integerity_check: 메모리 무결성 파괴가 감지되면 메시지 출력 후
+ * 프로그램을 종료한다. */
+static void integrity_check(char *additional)
+{
+    if (!every(&isclean)) {     
+        map(&printmem, stderr);
+        fputs(additional, stderr);
+        fputs(" Detected broken memory integrity\n",
+              stderr);
+        abort();
+    }
+}
+
 /* dmalloc: 디버그를 위한 할당 함수. 메모리 무결성이 깨지면
  * 에러메시지를 출력하고 종료한다. */
 void *dmalloc(size_t n)
@@ -21,11 +34,7 @@ void *dmalloc(size_t n)
     Byte *real;
     void *addr = NULL;
     Dmem *mem;
-    if (!every(&isclean)) {     /* 메모리 무결성 파괴 감지 */
-        map(&printmem, stderr);
-        fputs("Detected broken memory integrity", stderr);
-        abort();
-    }
+    integrity_check("dmalloc:");
     real = (Byte *)malloc(size);
     if (!real)                  /* 메모리 블록 할당 실패 */
         return NULL;
@@ -38,6 +47,43 @@ void *dmalloc(size_t n)
         return NULL;
     }
     return addr;
+}
+
+/* dfree: 디버그를 위한 해제 함수. dmalloc으로 할당되지 않았거나
+ * 메모리가 훼손된 경우 에러메시지를 출력하고 종료한다. */
+void dfree(void *p)
+{
+    Dmem *mem;
+    Byte *real;
+    integrity_check("dfree:");
+    if (!p)             /* dfree(NULL)은 아무 작업도 수행하지 않는다*/
+        return;
+    mem = find(p);
+    if (!mem) {              /* dmalloc으로 할당한 메모리가 아닐 때 */
+        fputs("dfree: dangling pointer error\n", stderr);
+        abort();
+    }
+    real = mem->real;
+    real[0] = real[mem->size-1] = 0x0;
+    free(real);
+    del(mem);
+}
+
+/* dmem_isclean: dmalloc으로 할당된 메모리에 메모리 침범이 있는지
+ * 확인하고 무결성이 확인되면 1, 그렇지 않으면 0을 반환한다. */
+int dmem_isclean(void *addr)
+{
+    Dmem *mem;
+    mem = find(addr);
+    return isclean(mem);
+}
+
+/* dmem_dump: dmalloc으로 할당된 모든 메모리에 대해 무결성을 확인하고
+ * 내용을 출력한다. 메모리 값은 16진수와 아스키 문자로 각각 출력되고,
+ * 메모리 주소도 16진수로 출력된다. */
+void dmem_dump(FILE* fout)
+{
+    map(&printmem, fout);
 }
 
 /* isclean: mem 객체에 할당된 메모리의 무결성을 확인한다. 메모리
@@ -74,7 +120,7 @@ static void printmem(Dmem *mem, void *arg)
     Byte *asbytes;
 
     assert(mem != NULL);
-    sprintf(addr, "0x%x", mem->addr);
+    sprintf(addr, "%p", mem->addr);
     len = strlen(addr);
 
     fout = (FILE *)arg;
@@ -107,6 +153,8 @@ static void printmem(Dmem *mem, void *arg)
 
 #if defined ( __DMEMORY_TEST_MAIN )
 
+/* test_printmem: isclean, spaces을 기반으로 하는 printmem 함수를
+ * 테스트한다. */
 void test_printmem()
 {
     const int size = 24,   /* 시험용 배열 크기 */
@@ -132,9 +180,34 @@ void test_printmem()
     printmem(newm, stdout);
 }
 
+/* test_dmalloc: dmalloc 함수를 테스트한다. */
+void test_dmalloc()
+{
+    char const *base = "hello, world";
+    int len;
+    char *str1, *str2;
+    len = strlen(base);
+    str1 = (char *) dmalloc(len); /* '\0' 공간을 빼먹는 흔한 실수 */
+    if (!str1)
+        perror("test_dmalloc");
+    strcpy(str1, base);
+    str2 = (char *) dmalloc(len);
+    assert (1 == 0);       /* 이 전에 반드시 abort가 일어나야 한다. */
+}
+
+void test_dfree()
+{
+    void *p = dmalloc(5);
+    dfree(p);
+    
+    puts("Here we go...");    /* 여기까지 반드시 도달해야 한다. */
+    dfree(p);
+    assert (1 == 0);       /* 이 전에 반드시 abort가 일어나야 한다. */
+}
+
 int main()
 {
-    test_printmem();
+    test_dfree();
 }
 
 #endif

@@ -7578,3 +7578,411 @@ abort는 디버거로 분석 작업을 할 수 있도록 프로그램을 비정�
 =0x00= 으로 파괴되었기 때문에 =isclean= 함수가 버퍼 오버플로를 감지할
 수 있다.
 
+*라이브러리 구현*
+
+우선 무결성 파괴를 감지하여 무결성이 깨지면 메모리 블록을 출력하고
+종료하는 줄임말 함수부터 만들자.
+
+#+BEGIN_SRC c
+  /* integerity_check: 메모리 무결성 파괴가 감지되면 메시지 출력 후
+   ,* 프로그램을 종료한다. */
+  static void integrity_check(char *additional)
+  {
+      if (!every(&isclean)) {     
+          map(&printmem, stderr);
+          fputs(additional, stderr);
+          fputs(" Detected broken memory integrity\n",
+                stderr);
+          abort();
+      }
+  }
+#+END_SRC
+
+이 함수는 =dmalloc= 과 =dfree= 함수에서 쓰일 것이다.
+
+=dmalloc= 함수를 구현한다. 무결성 체크를 수행하고, 메모리에 추가 검증
+바이트를 삽입하고, 메모리 블록 리스트에 넣어서 지속적으로 관리되도록
+한다.
+
+#+BEGIN_SRC c
+  /* dmalloc: 디버그를 위한 할당 함수. 메모리 무결성이 깨지면
+   ,* 에러메시지를 출력하고 종료한다. */
+  void *dmalloc(size_t n)
+  {
+      const int size = n+2;       /* 검증 바이트를 포함한 크기 */
+      Byte *real;
+      void *addr = NULL;
+      Dmem *mem;
+      integrity_check("dmalloc:");
+      real = (Byte *)malloc(size);
+      if (!real)                  /* 메모리 블록 할당 실패 */
+          return NULL;
+      real[0] = CHECKBYTE;
+      real[size-1] = CHECKBYTE;
+      addr = (void *)(&real[1]);
+      mem = add(makemem(addr, real, size));
+      if (!mem) {                 /* Dmem 객체 할당 실패 */
+          free(real);
+          return NULL;
+      }
+      return addr;
+  }
+#+END_SRC
+
+=dfree= 함수를 구현한다. 이 역시 무결성 체크를 수행하고, 메모리 블록
+리스트에 없다면 댕글링 포인터 에러를 발생시키고, 메모리에 추가 검증
+바이트를 제거하고, 메모리 블록 리스트에서 제거한다.
+
+#+BEGIN_SRC c
+  /* dfree: 디버그를 위한 해제 함수. dmalloc으로 할당되지 않았거나
+   ,* 메모리가 훼손된 경우 에러메시지를 출력하고 종료한다. */
+  void dfree(void *p)
+  {
+      Dmem *mem;
+      Byte *real;
+      integrity_check("dfree:");
+      if (!p)             /* dfree(NULL)은 아무 작업도 수행하지 않는다*/
+          return;
+      mem = find(p);
+      if (!mem) {              /* dmalloc으로 할당한 메모리가 아닐 때 */
+          fputs("dfree: dangling pointer error\n", stderr);
+          abort();
+      }
+      real = mem->real;
+      real[0] = real[mem->size-1] = 0x0;
+      free(real);
+      del(mem);
+  }
+#+END_SRC
+
+=dmem_isclean= 함수와 =dmem_dump= 함수는 미리 만들어둔 헬퍼 함수들을
+이용하면 간단하다.
+
+#+BEGIN_SRC c
+  /* dmem_isclean: dmalloc으로 할당된 메모리에 메모리 침범이 있는지
+   ,* 확인하고 무결성이 확인되면 1, 그렇지 않으면 0을 반환한다. */
+  int dmem_isclean(void *addr)
+  {
+      Dmem *mem;
+      mem = find(addr);
+      return isclean(mem);
+  }
+
+  /* dmem_dump: dmalloc으로 할당된 모든 메모리에 대해 무결성을 확인하고
+   ,* 내용을 출력한다. 메모리 값은 16진수와 아스키 문자로 각각 출력되고,
+   ,* 메모리 주소도 16진수로 출력된다. */
+  void dmem_dump(FILE* fout)
+  {
+      map(&printmem, fout);
+  }
+#+END_SRC
+
+이 함수들은 사용자가 직접 상황을 제어하기 위해서 호출하는
+함수들이므로, 무결성 검사 및 강제종료를 하지 않는다.
+
+*Dmemory 라이브러리 테스트*
+
+가장 먼저 =dmalloc= 의 수행 과정부터 검정한다.
+
+#+BEGIN_SRC c
+  /* test_dmalloc: dmalloc 함수를 테스트한다. */
+  void test_dmalloc()
+  {
+      char const *base = "hello, world";
+      int len;
+      char *str1, *str2;
+      len = strlen(base);
+      str1 = (char *) dmalloc(len); /* '\0' 공간을 빼먹는 흔한 실수 */
+      if (!str1)
+          perror("test_dmalloc");
+      strcpy(str1, base);
+      str2 = (char *) dmalloc(len);
+      assert (1 == 0);       /* 이 전에 반드시 abort가 일어나야 한다. */
+  }
+#+END_SRC
+
+수행 결과는 다음과 같다.
+
+#+BEGIN_EXAMPLE
+  0xa9d0f231: is not clean.
+              68 65 6c 6c 6f 2c 20 77   h e l l o ,   w
+              6f 72 6c 64               o r l d
+  dmalloc: Detected broken memory integrity
+#+END_EXAMPLE
+
+정상적으로 무결성 검사가 일어난다.
+
+다음에는 댕글링 포인터를 제대로 검사하는지 검정한다.
+
+#+BEGIN_SRC c
+  void test_dfree()
+  {
+      void *p = dmalloc(5);
+      dfree(p);
+    
+      puts("Here we go...");    /* 여기까지 반드시 도달해야 한다. */
+      dfree(p);
+      assert (1 == 0);       /* 이 전에 반드시 abort가 일어나야 한다. */
+  }
+#+END_SRC
+
+수행 결과는 다음과 같다.
+
+#+BEGIN_EXAMPLE
+  Here we go...
+  dfree: dangling pointer error
+#+END_EXAMPLE
+
+정상적으로 댕글링 포인터 검사가 일어난다.
+
+*시험 주행*
+
+이제 정상적으로 기능하는 시나리오를 만들어본다. 파일에서 단어별 등장
+횟수를 세는 프로그램을 만들면서 =dmalloc= 과 =dfree= 를 이용해본다.
+
+#+BEGIN_SRC c
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
+
+  #define __DEBUG_MODE
+  #include "dmemory.h"
+
+  /* estrdup: 문자열을 복사하고, 에러 발생 시 종료 */
+  static char *estrdup(char *s)
+  {
+      char *t;
+      t = (char *) dmalloc(strlen(s) + 1);
+      if (t == NULL) {
+          fprintf(stderr, "estrdup(\"%.20s\") failed:", s);
+          exit(2);
+      }
+      strcpy(t, s);
+      return t;
+  }
+
+  enum {
+      MULTIPLIER = 31,            /* 해시 상수 */
+      NHASH = 4093,               /* wordtab 원소 개수 */
+  };
+
+  /* Word: 단어를 기록하는 해시테이블 체인 노드 */
+  typedef struct Word Word;
+  struct Word {                   
+      char *text;                 /* text: 단어 */
+      int  freq;                  /* freq: 출현 빈도 */
+      Word *next;                 /* next: 다음 노드 */
+  };
+
+  static Word *wordtab[NHASH]  /* wordtab: 단어를 기록하는 해시테이블 */
+      = { NULL }; 
+  static int nword = 0;            /* nword: 단어의 개수 */
+
+  /* hash: 문자열에 대한 해시값을 반환한다. */
+  static unsigned int hash(char *s)
+  {
+      unsigned int h, i;
+
+      h = 0;
+      for (i = 0; s[i] != '\0'; i++) {
+          h = h * MULTIPLIER + s[i];
+      }
+      return h % NHASH;
+  }
+
+  /* lookup: wordtab에서 text와 일치하는 Word 객체를 찾아 반환한다. 만약
+   ,* 일치하는 원소가 없다면 새로 만든다. */
+  static Word *lookup(char *text)
+  {
+      Word *p;
+      char *s;
+      unsigned h;
+      h = hash(text);
+      for (p = wordtab[h]; p != NULL; p = p->next)
+          if (strcmp(text, p->text) == 0)
+              return p;
+      /* 찾지 못했다면 새로 만든다 */
+      s = estrdup(text);
+      p = (Word *) dmalloc(sizeof(Word));
+      if (!p) {                   /* 할당 실패 */
+          perror("lookup");
+          exit(2);
+      }
+      p->text = s;
+      p->freq = 0;
+      p->next = wordtab[h];
+      wordtab[h] = p;
+      nword++;
+      return p;
+  }
+
+  /* cleanup: 할당한 wordtab 원소들을 해제한다. */
+  static void cleanup()
+  {
+      int i;
+      Word *p, *next;
+      for (i = 0; i < NHASH; i++)
+          for (p = wordtab[i]; p != NULL; p = next) {
+              next = p->next;
+              dfree(p->text);
+              dfree(p);
+          }
+  }
+
+  /* add: 단어의 출현 빈도수를 1씩 올린다. */
+  static void add(char *text)
+  {
+      Word *word;
+      word = lookup(text);
+      word->freq += 1;
+  }
+
+  /* wcmp: Word 객체들을 역순 비교한다. */
+  static int wcmp(const void *v1, const void *v2)
+  {
+      Word *w1, *w2;
+      w1 = *((Word **)v1);
+      w2 = *((Word **)v2);
+      return (w2->freq) - (w1->freq);
+  }
+
+  /* to_array: wordtab 원소들을 배열로 만들어 저장한다. */
+  void to_array(Word *words[])
+  {
+      int i, cnt;
+      Word *p;
+      cnt = 0;
+      for (i = 0; i < NHASH; i++)
+          for (p = wordtab[i]; p != NULL; p = p->next)
+              words[cnt++] = p;
+  }
+
+  /* rank: 출현 빈도 순으로 정리하여 상위 n개 출력한다. n이 -1이면 모두
+   ,* 출력한다. */
+  static void rank(int n)
+  {
+      Word **words;
+      int i;
+      words = (Word **) dmalloc (
+          nword * (sizeof words[0]));
+      to_array(words);
+      qsort(words, nword, (sizeof words[0]), &wcmp);
+      if (n < 0 || nword < n)
+          n = nword;
+      for (i = 0; i < n; i++)
+          printf("[%03d] %s : %d times.\n",
+                 i+1, words[i]->text, words[i]->freq);
+      dfree(words);
+  }
+
+  #if !defined(BUFSIZ)
+  #define BUFSIZ 512
+  #endif
+
+  /* usage: 프로그램의 사용법을 출력한다. */
+  static void usage(char *progname) {
+      printf("usage: %s <filename> [ranking]\n", progname);
+      puts("     <filename> denotes text file's name.");
+      puts("     [ranking] denotes number of words to print.");
+      puts("You can skip [ranking] parameter."
+           "If you skip, all words will be printed.");
+  }
+    
+  int main(int argc, char *argv[])
+  {
+      char buf[BUFSIZ];
+      FILE *src;
+      char *endptr;
+      int nprint = -1;
+      if (argc < 2) {
+          usage(argv[0]);
+          exit(0);
+      }
+      if (argc == 3) {
+          nprint = strtol(argv[2], &endptr, 10);
+          if (endptr == argv[2] || *endptr != '\0') {
+              usage(argv[0]);
+              exit(0);
+          }
+      }
+
+      src = fopen(argv[1], "r");
+      if (!src) {
+          sprintf(buf, "%s openning file %s",
+                  argv[0], argv[1]);
+          perror(buf);
+          exit(1);
+      }
+
+      while (fscanf(src, "%s", buf) == 1)
+          add(buf);
+    
+      rank(nprint);
+
+      cleanup();
+  #if defined (__DEBUG_MODE)
+      /* 제대로 모두 지워졌는지 확인한다. */
+      dmem_dump(stdout);
+  #endif
+      return 0;
+  }
+#+END_SRC
+
+*수행 결과*
+
+"Alice in Wonderland" 내용을 삽입해본다.
+
+#+BEGIN_EXAMPLE
+  CMD> wordcount.exe alice.txt 10
+  [001] the : 1505 times.
+  [002] and : 712 times.
+  [003] to : 703 times.
+  [004] a : 603 times.
+  [005] of : 489 times.
+  [006] she : 484 times.
+  [007] said : 416 times.
+  [008] it : 346 times.
+  [009] in : 343 times.
+  [010] was : 328 times.
+#+END_EXAMPLE
+
+=dmalloc= / =dfree= 함수가 아주 많이 호출 됬을 텐데도 정상적으로
+실행된다. 그러나 프로그램이 모든 자원을 잘 해제 했는지, =dmem_dump= 가
+아무것도 출력하지 않는다.
+
+=rank= 함수가 =words= 를 해제하지 않도록 일부러 누수를 만든 뒤
+실행하면 =dmem_dump= 함수의 출력이 나타난다.
+
+#+BEGIN_EXAMPLE
+  [001] the : 1505 times.
+  [002] and : 712 times.
+  [003] to : 703 times.
+  [004] a : 603 times.
+  [005] of : 489 times.
+  [006] she : 484 times.
+  [007] said : 416 times.
+  [008] it : 346 times.
+  [009] in : 343 times.
+  [010] was : 328 times.
+  000001FCA01FD021: is clean.
+                    f1 c7 11 a0 fc 01 00 00   . . . . . . . .
+                    51 c8 11 a0 fc 01 00 00   Q . . . . . . .
+                    21 bd 11 a0 fc 01 00 00   ! . . . . . . .
+                    01 e0 11 a0 fc 01 00 00   . . . . . . . .
+                    01 c7 11 a0 fc 01 00 00   . . . . . . . .
+  (중간 생략)
+                    01 25 17 a0 fc 01 00 00   . % . . . . . .
+                    01 62 1f a0 fc 01 00 00   . b . . . . . .
+                    81 bb 13 a0 fc 01 00 00   . . . . . . . .
+                    e1 00 1f a0 fc 01 00 00   . . . . . . . .
+#+END_EXAMPLE
+
+8바이트씩 끊어진 주소값들이 보인다(바이트가 역순으로 보이는 까닭은
+엔디안 형식 때문이다).
+
+"Alice in Wonderland"는 아주 커다란 파일이기 때문에, 단어가 매우 많아
+출력 내용이 아주 길다. 실제로 써먹기 위해서는, =dmem_dump= 함수가 세부
+메모리 내용을 출력할지 말지 출력할지 말지 결정하는 옵션을 도입하는
+것이 좋겠다.
+
+** 디버깅 툴
