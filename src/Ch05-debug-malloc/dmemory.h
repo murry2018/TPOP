@@ -9,7 +9,7 @@
  #else
  #include <stdio.h>
 
- /* dmalloc: 디버그를 위한 할당 함수. 메모리 넘침이 감지되면
+ /* dmalloc: 디버그를 위한 할당 함수. 메모리 무결성이 깨지면
   * 에러메시지를 출력하고 종료한다. */
  extern void *dmalloc(size_t);
  /* dfree: 디버그를 위한 해제 함수. dmalloc으로 할당되지 않았거나
