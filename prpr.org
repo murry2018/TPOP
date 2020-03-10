@@ -9350,11 +9350,11 @@ C언어가 처리할 수 있는 타입 값은 기본적으로 정수, 부동소�
   test condition
 #+END_EXAMPLE
 
-test condition에는 어떤 명령이라도 들어갈 수 있다. 예를 들면 다음과 같다.
+test condition에는 어떤 조건식이라도 들어갈 수 있다. 예를 들면 다음과 같다.
 
 #+BEGIN_EXAMPLE
   "", 1, 2, 3
-  expr 0 = `stat -c"%s" out.txt`
+  [ 0 -eq `stat -c%s out.txt`]
 #+END_EXAMPLE
 
 *DSL 실행기 구현*
