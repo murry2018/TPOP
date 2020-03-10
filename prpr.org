@@ -9342,6 +9342,10 @@ C언어가 처리할 수 있는 타입 값은 기본적으로 정수, 부동소�
 
 *어떻게 할 것인가*
 
+컴파일러가 한 개뿐인 경우, 두 프로그램의 출력을 비교 검정하는 것은
+쉽지 않다. 따라서 답을 모두 아는 상태에서 하는 수 밖에 없다. 테스트를
+더 용이하게 하기 위해, 자급자족 테스트를 위한 프레임워크를 만들것이다.
+
 저자의 DSL이 인상깊어, 이와 비슷하게 해보고자 한다. 대신 문법을 좀 더
 단순화 한다. 테스트 DSL의 형식은 다음과 같다.
 
@@ -9365,9 +9369,152 @@ test condition에는 어떤 조건식이라도 들어갈 수 있다. 예를 들�
   rm -f out.txt test.c test.exe   # 기존 출력 제거
   cat <<EOF > test.c              # 코드 작성
   #include <stdio.h>
-  int main() { print($i); }
+  int main() { printf($i); }
   EOF
   cc -w test.c -o test.exe        # 컴파일
   timeout 2s test.exe > out.txt   # 실행시간 2초 제한
 #+END_SRC
 
+홀수 행에는 테스트가, 짝수 행에는 조건식이 있으므로 테스트 프로그램은
+적당히 이런 골격을 가지게 된다.
+
+#+BEGIN_SRC bash
+  c=0
+  prevcode=""
+  while read line; do
+      ((c++))
+      if (( c % 2 )); then
+          # 프로그램 작성/실행
+          prevcode=$line
+      else
+          if ! eval $line; then
+              echo "BAD:" $prevcode
+          fi
+      fi
+  done < input.txt
+#+END_SRC
+
+주석과 빈 라인을 실행할 수 있도록 만든 완전한 DSL 실행기는 다음과 같다.
+
+#+BEGIN_SRC bash
+  #!/bin/bash
+
+  c=0
+  prevcode=""
+  while read line; do
+      if [[ $line =~ ^[[:space:]]*$ ]]; then # 빈 라인이라면
+          continue
+      fi
+      if [[ $line =~ ^[[:space:]]*#.*$ ]]; then # 주석이 있다면
+          continue
+      fi
+      ((c++))
+      if (( c % 2 )); then
+          rm -f out.txt test.c test.exe   # 기존 출력 제거
+          cat <<EOF > test.c              # 코드 작성
+  #include <stdio.h>
+  int main() { printf($line); }
+  EOF
+          cc -w test.c -o test.exe        # 컴파일
+          timeout 2s ./test.exe > out.txt # 실행시간 2초 제한
+          prevcode=$line
+      else
+          if ! eval $line; then
+              echo "BAD:" $prevcode
+          fi
+      fi
+  done < input.txt
+#+END_SRC
+
+*DSL 실행기 시험 주행*
+
+다음과 같은 입력을 준비한다.
+
+#+BEGIN_EXAMPLE
+  # 빈 출력을 체크한다
+  "", 1, 2
+  [ 0 -eq `stat -c%s out.txt` ]
+
+  # 정수 출력
+  "%d", 1
+  [[ `cat out.txt` == '1' ]]
+
+  # 반드시 실패하는 테스트
+  "0"
+  [[ `cat out.txt` == '1' ]]
+
+  # 실수를 원하는 길이만큼 출력
+  "%.2f", 3.141592
+  [[ `cat out.txt` == '3.14' ]]
+#+END_EXAMPLE
+
+*DSL 실행기 수행 결과*
+
+#+BEGIN_EXAMPLE
+  BAD: "0"
+#+END_EXAMPLE
+
+반드시 실패하는 테스트 말고 전부 올바르게 설계되었다.
+
+*출력을 만들어내는 프로그램*
+
+테스트를 일일이 만들어내는 것도 귀찮게 되었다. 좀 더 현명하게
+게을러지려면, 테스트의 답을 자동으로 만들어낼 수 있어야 한다. 빈
+입력을 검증하는 테스트를 빼면 모두 파일 내용을 검증하기 때문에, 이같은
+조건식을 자동 생성해주는 쉘 스크립트를 작성한다. 이 작업은 현재 버전의
+c 컴파일러가 올바르게 작동한다는 가정 하에 만드는 것이다.
+
+#+BEGIN_SRC bash
+  while read line; do
+      echo $line;
+      rm -f test.c test.exe out.txt
+      cat <<EOF > test.c
+  #include <stdio.h>
+  int main(void) {printf($line);}
+  EOF
+      cc -w test.c -o test.exe
+      timeout 2s ./test.exe > out.txt
+      echo "[[ \`cat out.txt\` == '`cat out.txt`' ]]"
+  done
+#+END_SRC
+
+*시험 주행*
+
+다음과 같은 입력을 준비한다.
+
+#+BEGIN_EXAMPLE
+  "%d", 1, 2
+  "%.2f", 3.1415
+  "%03d", 1
+  "%03d", 12
+  "%03d", 123
+  "%03d", 1234
+  "%.*s", 4, "hello"
+#+END_EXAMPLE
+
+출력은 다음과 같다.
+
+#+BEGIN_EXAMPLE
+  "%d", 1, 2
+  [[ `cat out.txt` == '1' ]]
+  "%.2f", 3.1415
+  [[ `cat out.txt` == '3.14' ]]
+  "%03d", 1
+  [[ `cat out.txt` == '001' ]]
+  "%03d", 12
+  [[ `cat out.txt` == '012' ]]
+  "%03d", 123
+  [[ `cat out.txt` == '123' ]]
+  "%03d", 1234
+  [[ `cat out.txt` == '1234' ]]
+  "%.*s", 4, "hello"
+  [[ `cat out.txt` == 'hell' ]]
+#+END_EXAMPLE
+
+*평가*
+
+=cc= 와 같은 프로그램이 오류를 내보내면 어떻게 해야할지는 잘 모르겠다.
+테스트 DSL이 올바르게 작성되었다고 믿는 수밖에 없다.
+
+*출력을 만들어내는 프로그램* 의 입력조차 자동으로 만들어낼 수 있다면
+좋겠지만, 거기까진 어떻게 해야할 지 잘 모르겠다.
